@@ -349,11 +349,9 @@ void preciceAdapter::Adapter::configure()
             fulfilledWriteCheckpoint();
         }
 
-        // Adjust the timestep for the first iteration, if it is fixed
-        if (!adjustableTimestep_)
-        {
-            adjustSolverTimeStep();
-        }
+        // Adjust the timestep for the first iteration
+        adjustSolverTimeStep();
+
 
         // If the solver tries to end before the coupling is complete,
         // e.g. because the solver's endTime was smaller or (in implicit
