@@ -138,92 +138,89 @@ private:
 
     // Vectors of pointers to the checkpointed mesh fields and their copies
 
-    //- Checkpointed surfaceScalarField mesh fields
-    std::vector<Foam::surfaceScalarField*> meshSurfaceScalarFields_;
 
-    //- Checkpointed surfaceScalarField mesh fields (copies)
-    std::vector<Foam::surfaceScalarField*> meshSurfaceScalarFieldCopies_;
-
-    //- Checkpointed surfaceVectorField mesh fields
-    std::vector<Foam::surfaceVectorField*> meshSurfaceVectorFields_;
-
-    //- Checkpointed surfaceVectorField mesh fields (copies)
-    std::vector<Foam::surfaceVectorField*> meshSurfaceVectorFieldCopies_;
-
-    //- Checkpointed volVectorField mesh fields
-    std::vector<Foam::volVectorField*> meshVolVectorFields_;
-
-    //- Checkpointed volVectorField mesh fields (copies)
-    std::vector<Foam::volVectorField*> meshVolVectorFieldCopies_;
-
-    // TODO checkpoint for the V0 (Old volume) and V00 (Old-Old volume) fields.
-    //- Checkpointed volScalarField mesh fields
-    std::vector<Foam::volScalarField::Internal*> volScalarInternalFields_;
-
-    //- Checkpointed volScalarField mesh fields (copies)
-    std::vector<Foam::volScalarField::Internal*> volScalarInternalFieldCopies_;
-
-    // Vectors of pointers to the checkpointed fields and their copies
-
-    //- Checkpointed volScalarField fields
+    //- Checkpointed vol mesh fields
     std::vector<Foam::volScalarField*> volScalarFields_;
-
-    //- Checkpointed volScalarField fields (copies)
     std::vector<Foam::volScalarField*> volScalarFieldCopies_;
 
-    //- Checkpointed volVectorField fields
     std::vector<Foam::volVectorField*> volVectorFields_;
-
-    //- Checkpointed volVectorField fields (copies)
     std::vector<Foam::volVectorField*> volVectorFieldCopies_;
 
-    //- Checkpointed surfaceScalarField fields
-    std::vector<Foam::surfaceScalarField*> surfaceScalarFields_;
+    std::vector<Foam::volSymmTensorField*> volSymmTensorFields_;
+    std::vector<Foam::volSymmTensorField*> volSymmTensorFieldCopies_;
 
-    //- Checkpointed surfaceScalarField fields (copies)
-    std::vector<Foam::surfaceScalarField*> surfaceScalarFieldCopies_;
+    std::vector<Foam::volSphericalTensorField*>
+        volSphericalTensorFields_;
+    std::vector<Foam::volSphericalTensorField*>
+        volSphericalTensorFieldCopies_;
 
-    //- Checkpointed surfaceVectorField fields
-    std::vector<Foam::surfaceVectorField*> surfaceVectorFields_;
-
-    //- Checkpointed surfaceVectorField fields (copies)
-    std::vector<Foam::surfaceVectorField*> surfaceVectorFieldCopies_;
-
-    //- Checkpointed pointScalarField fields
-    std::vector<Foam::pointScalarField*> pointScalarFields_;
-
-    //- Checkpointed pointScalarField fields (copies)
-    std::vector<Foam::pointScalarField*> pointScalarFieldCopies_;
-
-    //- Checkpointed pointVectorField fields
-    std::vector<Foam::pointVectorField*> pointVectorFields_;
-
-    //- Checkpointed pointVectorField fields (copies)
-    std::vector<Foam::pointVectorField*> pointVectorFieldCopies_;
-
-    //- Checkpointed volTensorField fields
     std::vector<Foam::volTensorField*> volTensorFields_;
-
-    //- Checkpointed volTensorField fields (copies)
     std::vector<Foam::volTensorField*> volTensorFieldCopies_;
 
-    //- Checkpointed surfaceTensorField fields
-    std::vector<Foam::surfaceTensorField*> surfaceTensorFields_;
 
-    //- Checkpointed surfaceTensorField fields (copies)
+    //- Checkpointed internal vol mesh fields
+    std::vector<Foam::volScalarField::Internal*>
+        volScalarInternalFields_;
+    std::vector<Foam::volScalarField::Internal*>
+        volScalarInternalFieldCopies_;
+
+    std::vector<Foam::volVectorField::Internal*>
+        volVectorInternalFields_;
+    std::vector<Foam::volVectorField::Internal*>
+        volVectorInternalFieldCopies_;
+
+    std::vector<Foam::volSymmTensorField::Internal*>
+        volSymmTensorInternalFields_;
+    std::vector<Foam::volSymmTensorField::Internal*>
+        volSymmTensorInternalFieldCopies_;
+
+    std::vector<Foam::volSphericalTensorField::Internal*>
+        volSphericalTensorInternalFields_;
+    std::vector<Foam::volSphericalTensorField::Internal*>
+        volSphericalTensorInternalFieldCopies_;
+
+    std::vector<Foam::volTensorField::Internal*>
+        volTensorInternalFields_;
+    std::vector<Foam::volTensorField::Internal*>
+        volTensorInternalFieldCopies_;
+
+
+    //- Checkpointed surface mesh fields
+    std::vector<Foam::surfaceScalarField*> surfaceScalarFields_;
+    std::vector<Foam::surfaceScalarField*> surfaceScalarFieldCopies_;
+
+    std::vector<Foam::surfaceVectorField*> surfaceVectorFields_;
+    std::vector<Foam::surfaceVectorField*> surfaceVectorFieldCopies_;
+
+    std::vector<Foam::surfaceSymmTensorField*> surfaceSymmTensorFields_;
+    std::vector<Foam::surfaceSymmTensorField*> surfaceSymmTensorFieldCopies_;
+
+    std::vector<Foam::surfaceSphericalTensorField*>
+        surfaceSphericalTensorFields_;
+    std::vector<Foam::surfaceSphericalTensorField*>
+        surfaceSphericalTensorFieldCopies_;
+
+    std::vector<Foam::surfaceTensorField*> surfaceTensorFields_;
     std::vector<Foam::surfaceTensorField*> surfaceTensorFieldCopies_;
 
-    //- Checkpointed pointTensorField fields
+
+    //- Checkpointed point fields
+    std::vector<Foam::pointScalarField*> pointScalarFields_;
+    std::vector<Foam::pointScalarField*> pointScalarFieldCopies_;
+
+    std::vector<Foam::pointVectorField*> pointVectorFields_;
+    std::vector<Foam::pointVectorField*> pointVectorFieldCopies_;
+
+    std::vector<Foam::pointSymmTensorField*> pointSymmTensorFields_;
+    std::vector<Foam::pointSymmTensorField*> pointSymmTensorFieldCopies_;
+
+    std::vector<Foam::pointSphericalTensorField*>
+        pointSphericalTensorFields_;
+    std::vector<Foam::pointSphericalTensorField*>
+        pointSphericalTensorFieldCopies_;
+
     std::vector<Foam::pointTensorField*> pointTensorFields_;
-
-    //- Checkpointed pointTensorField fields (copies)
     std::vector<Foam::pointTensorField*> pointTensorFieldCopies_;
-
-    //- Checkpointed volSymmTensorField fields
-    std::vector<Foam::volSymmTensorField*> volSymmTensorFields_;
-
-    //- Checkpointed volSymmTensorField fields (copies)
-    std::vector<Foam::volSymmTensorField*> volSymmTensorFieldCopies_;
 
 
     // NOTE: Declare additional vectors for any other types required.
@@ -298,73 +295,121 @@ private:
     void reloadMeshPoints();
 
     // Add mesh checkpoint fields, depending on the type
-    //- Add a surfaceScalarField mesh field
-    void addMeshCheckpointField(surfaceScalarField& field);
+    template<class GeoField>
+    void addCheckpointFields
+    (
+        std::vector<GeoField*>& fields,
+        std::vector<GeoField*>& fieldCopies
+    )
+    {
+        wordList names(mesh_.names(GeoField::typeName));
+        forAll(names, i)
+        {
+            GeoField& fld = mesh_.lookupObjectRef<GeoField>(names[i]);
+            fields.push_back(&fld);
+            fieldCopies.push_back
+            (
+                new GeoField
+                (
+                    "preCICE:" + fld.name(),
+                    fld
+                )
+            );
 
-    //- Add a surfaceVectorField mesh field
-    void addMeshCheckpointField(surfaceVectorField& field);
+            adapterInfo("Checkpointing: " + fld.name());
+        }
+    }
 
-    //- Add a volVectorField mesh field
-    void addMeshCheckpointField(volVectorField& field);
+    // NOTE: Read checkpoint fields
+    template<class GeoField>
+    void readCheckpointFields
+    (
+        std::vector<GeoField*>& fields,
+        const std::vector<GeoField*>& fieldCopies
+    )
+    {
+        // Reload all the fields of type GeoField
+        for (uint i = 0; i < fields.size(); i++)
+        {
+            const GeoField& fldCopy(*fieldCopies.at(i));
+            GeoField& fld(*fields.at(i));
 
-    // TODO V0 and V00 checkpointed field.
-    //- Add the V0 and V00 checkpoint fields
-    void addVolCheckpointField(volScalarField::Internal& field);
-    // void addVolCheckpointFieldBuffer(volScalarField::Internal & field);
+            // Load the volume field
+            fld == fldCopy;
 
-    // Add checkpoint fields, depending on the type
+            int nOldTimes(fld.nOldTimes());
+            int oldI = 0;
+            GeoField* fldOld = &fld;
+            const GeoField* fldCopyOld = &fldCopy;
+            while (++oldI <= nOldTimes)
+            {
+                fldOld = &fldOld->oldTime();
+                fldCopyOld = &fldCopyOld->oldTime();
 
-    //- Add a volScalarField to checkpoint
-    void addCheckpointField(volScalarField* field);
+                *fldOld == *fldCopyOld;
+            }
+        }
+    }
 
-    //- Add a volVectorField to checkpoint
-    void addCheckpointField(volVectorField* field);
+    // NOTE: Read checkpoint fields
+    template<class GeoField>
+    void readInternalCheckpointFields
+    (
+        std::vector<GeoField*>& fields,
+        const std::vector<GeoField*>& fieldCopies
+    )
+    {
+        // Reload all the fields of type GeoField
+        for (uint i = 0; i < fields.size(); i++)
+        {
+            const GeoField& fldCpy(*fieldCopies.at(i));
+            GeoField& fld(*fields.at(i));
 
-    //- Add a surfaceScalarField to checkpoint
-    void addCheckpointField(surfaceScalarField* field);
+            // Load the volume field
+            fld == fldCpy;
+        }
+    }
 
-    //- Add a surfaceVectorField to checkpoint
-    void addCheckpointField(surfaceVectorField* field);
+    // Update checkpoint fields
+    template<class GeoField>
+    void writeCheckpointFields
+    (
+        const std::vector<GeoField*>& fields,
+        std::vector<GeoField*>& fieldCopies
+    )
+    {
+        // Reload all the fields of type GeoField
+        for (uint i = 0; i < fields.size(); i++)
+        {
+            // Store the field
+            GeoField& fldCpy(*fieldCopies.at(i));
+            const GeoField& fld(*fields.at(i));
 
-    //- Add a pointScalarField to checkpoint
-    void addCheckpointField(pointScalarField* field);
+            // Load the volume field
+            fldCpy == fld;
+        }
+    }
 
-    //- Add a pointVectorField to checkpoint
-    void addCheckpointField(pointVectorField* field);
-
-    // NOTE: Add here methods to add other object types to checkpoint,
-    // if needed.
-
-    //- Add a volTensorField to checkpoint
-    void addCheckpointField(volTensorField* field);
-
-    //- Add a surfaceTensorField to checkpoint
-    void addCheckpointField(surfaceTensorField* field);
-
-    //- Add a pointTensorField to checkpoint
-    void addCheckpointField(pointTensorField* field);
-
-    //- Add a volSymmTensorField to checkpoint
-    void addCheckpointField(volSymmTensorField* field);
-
-    //- Read the checkpoint - restore the mesh fields and time
-    void readMeshCheckpoint();
-
-    //- Read the checkpoint - restore the fields and time
-    void readCheckpoint();
-
-    //- Write the checkpoint - store the mesh fields and time
-    void writeMeshCheckpoint();
-
-    //- Write the checkpoint - store the fields and time
-    void writeCheckpoint();
+    // Update checkpoint fields
+    template<class GeoField>
+    void clearCheckpointFields
+    (
+        std::vector<GeoField*>& fieldCopies
+    )
+    {
+        // Clear all copied fields
+        for (uint i = 0; i < fieldCopies.size(); i++)
+        {
+            delete fieldCopies.at(i);
+        }
+    }
 
     // TODO Probably these can be included to the mesh checkpoints.
     //- Read the volume checkpoint - restore the mesh volume fields
-    void readVolCheckpoint();
+    void readCheckpoint();
 
     //- Write the volume checkpoint to a buffer - restore the mesh volume fields
-    void writeVolCheckpoint();
+    void writeCheckpoint();
 
     //- Destroy the preCICE interface and delete the allocated
     //  memory in a proper way. Called by the destructor.
@@ -387,6 +432,11 @@ public:
 
     //- Called by the functionObject's end()
     void end();
+
+    double timestepPrecice() const
+    {
+        return timestepPrecice_;
+    }
 
     //- Destructor
     ~Adapter();

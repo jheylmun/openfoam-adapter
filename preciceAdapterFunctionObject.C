@@ -110,4 +110,10 @@ bool Foam::functionObjects::preciceAdapterFunctionObject::setTimeStep()
     return true;
 }
 
+Foam::scalar Foam::functionObjects::preciceAdapterFunctionObject::timeToNextWrite()
+{
+    Info<<"precice: "<<adapter_.timestepPrecice()<<endl;
+    return adapter_.timestepPrecice();
+}
+
 // ************************************************************************* //

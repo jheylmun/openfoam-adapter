@@ -126,6 +126,9 @@ public:
     //- Called at the end of Time::adjustDeltaT() if adjustTime is true
     virtual bool setTimeStep();
 
+    //- Return time to next write
+    virtual scalar timeToNextWrite();
+
     /*
         // NOTE: If you add a new module that needs to execute methods
         // whenever the mesh is updated or its points moved,
