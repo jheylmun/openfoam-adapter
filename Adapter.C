@@ -350,7 +350,7 @@ void preciceAdapter::Adapter::configure()
         }
 
         // Adjust the timestep for the first iteration, if it is fixed
-        if (!adjustableTimestep_)
+        // if (!adjustableTimestep_)
         {
             adjustSolverTimeStep();
         }
