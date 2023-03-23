@@ -36,14 +36,44 @@ void preciceAdapter::FSI::Displacement::initialize()
 
 void preciceAdapter::FSI::Displacement::write(double* buffer, bool meshConnectivity, const unsigned int dim)
 {
-    /* TODO: Implement
-    * We need two nested for-loops for each patch,
-    * the outer for the locations and the inner for the dimensions.
-    * See the preCICE writeBlockVectorData() implementation.
-    */
-    FatalErrorInFunction
-        << "Writing displacements is not supported."
-        << exit(FatalError);
+    if (this->locationType_ == LocationType::faceCenters)
+    {
+        // For every boundary patch of the interface
+        for (const label patchID : patchIDs_)
+        {
+            const vectorField& pD =
+                cellDisplacement_->boundaryField()[patchID];
+
+            // Write the forces to the preCICE buffer
+            // For every face of the patch
+            forAll(pD, i)
+            {
+                for (unsigned int d = 0; d < dim; ++d)
+                {
+                    buffer[i * dim + d] = pD[i][d];
+                }
+            }
+        }
+    }
+    else if (this->locationType_ == LocationType::faceNodes)
+    {
+        // For every boundary patch of the interface
+        for (const label patchID : patchIDs_)
+        {
+            // Write the forces to the preCICE buffer
+            // For every point of the patch
+            const labelList& meshPoints =
+                mesh_.boundaryMesh()[patchID].meshPoints();
+            forAll(meshPoints, i)
+            {
+                const label pointID = meshPoints[i];
+                for (unsigned int d = 0; d < dim; ++d)
+                {
+                    buffer[i * dim + d] = (*pointDisplacement_)[pointID][d];
+                }
+            }
+        }
+    }
 }
 
 

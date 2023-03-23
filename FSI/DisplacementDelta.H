@@ -17,11 +17,11 @@ class DisplacementDelta : public CouplingDataUser
 {
 
 private:
-    // Displacement pointVectorField
-    Foam::pointVectorField* pointDisplacement_;
+    // DisplacementDelta pointVectorField
+    Foam::pointVectorField* pointDisplacementDelta_;
 
-    // cellDisplacement field
-    Foam::volVectorField* cellDisplacement_;
+    // cellDisplacementDelta field
+    Foam::volVectorField* cellDisplacementDelta_;
 
     const Foam::fvMesh& mesh_;
     // NOTE: this allocation could be avoided in case we directly write to the
@@ -32,8 +32,8 @@ public:
     //- Constructor
     DisplacementDelta(
         const Foam::fvMesh& mesh,
-        const std::string namePointDisplacement,
-        const std::string nameCellDisplacement);
+        const std::string namePointDisplacementDelta,
+        const std::string nameCellDisplacementDelta);
 
     //- Write the displacementDelta values into the buffer
     void write(double* buffer, bool meshConnectivity, const unsigned int dim) override;

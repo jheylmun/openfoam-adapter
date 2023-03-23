@@ -2,6 +2,10 @@
 
 #include "Utilities.H"
 
+#ifdef SOLID
+    #include "solidModel.H"
+#endif
+
 using namespace Foam;
 
 preciceAdapter::FSI::FluidStructureInteraction::FluidStructureInteraction(
@@ -26,8 +30,14 @@ bool preciceAdapter::FSI::FluidStructureInteraction::configure(const IOdictionar
     // specify in the configuration, add it here. See also the methods
     // addWriters() and addReaders().
     // Check the solver type and determine it if needed
-    if (
-        solverType_.compare("compressible") == 0 || solverType_.compare("incompressible") == 0)
+    if
+    (
+        solverType_.compare("compressible") == 0
+     || solverType_.compare("incompressible") == 0
+#ifdef SOLID
+     || solverType_.compare("solid") == 0
+#endif
+    )
     {
         DEBUG(adapterInfo("Known solver type: " + solverType_));
     }
@@ -57,13 +67,26 @@ bool preciceAdapter::FSI::FluidStructureInteraction::readConfig(const IOdictiona
     * Include the force here?
     */
 
-    // Read the name of the pointDisplacement field (if different)
-    namePointDisplacement_ = FSIdict.lookupOrDefault<word>("namePointDisplacement", "pointDisplacement");
-    DEBUG(adapterInfo("    pointDisplacement field name : " + namePointDisplacement_));
+    if (solverType_ == "solid")
+    {
+        // Read the name of the pointDisplacement field (if different)
+        namePointDisplacement_ = FSIdict.lookupOrDefault<word>("namePointDisplacement", "pointD");
+        DEBUG(adapterInfo("    pointDisplacement field name : " + namePointDisplacement_));
 
-    // Read the name of the pointDisplacement field (if different)
-    nameCellDisplacement_ = FSIdict.lookupOrDefault<word>("nameCellDisplacement", "cellDisplacement");
-    DEBUG(adapterInfo("    cellDisplacement field name : " + nameCellDisplacement_));
+        // Read the name of the pointDisplacement field (if different)
+        nameCellDisplacement_ = FSIdict.lookupOrDefault<word>("nameCellDisplacement", "D");
+        DEBUG(adapterInfo("    cellDisplacement field name : " + nameCellDisplacement_));
+    }
+    else
+    {
+        // Read the name of the pointDisplacement field (if different)
+        namePointDisplacement_ = FSIdict.lookupOrDefault<word>("namePointDisplacement", "pointDisplacement");
+        DEBUG(adapterInfo("    pointDisplacement field name : " + namePointDisplacement_));
+
+        // Read the name of the pointDisplacement field (if different)
+        nameCellDisplacement_ = FSIdict.lookupOrDefault<word>("nameCellDisplacement", "cellDisplacement");
+        DEBUG(adapterInfo("    cellDisplacement field name : " + nameCellDisplacement_));
+    }
 
     return true;
 }
@@ -79,7 +102,14 @@ std::string preciceAdapter::FSI::FluidStructureInteraction::determineSolverType(
     dimensionSet pressureDimensionsCompressible(1, -1, -2, 0, 0, 0, 0);
     dimensionSet pressureDimensionsIncompressible(0, 2, -2, 0, 0, 0, 0);
 
-    if (mesh_.foundObject<volScalarField>("p"))
+#ifdef SOLID
+    if (mesh_.lookupClass<solidModel>().size())
+    {
+        solverType = "solid";
+    }
+#endif
+
+    if (solverType == "unknown" && mesh_.foundObject<volScalarField>("p"))
     {
         const volScalarField& p_ = mesh_.lookupObject<volScalarField>("p");
 
@@ -97,9 +127,12 @@ std::string preciceAdapter::FSI::FluidStructureInteraction::determineSolverType(
     {
         adapterInfo("Failed to determine the solver type. "
                     "Please specify your solver type in the FSI section of the "
-                    "preciceDict. Known solver types for FSI are: "
-                    "incompressible and "
-                    "compressible",
+                    "preciceDict. Known solver types for FSI are:\n"
+#ifdef SOLID
+                    "solid\n"
+#endif
+                    "incompressible\n"
+                    "compressible\n",
                     "error");
     }
 

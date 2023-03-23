@@ -4,14 +4,14 @@ using namespace Foam;
 
 preciceAdapter::FSI::DisplacementDelta::DisplacementDelta(
     const Foam::fvMesh& mesh,
-    const std::string namePointDisplacement,
-    const std::string nameCellDisplacement)
-: pointDisplacement_(
+    const std::string namePointDisplacementDelta,
+    const std::string nameCellDisplacementDelta)
+: pointDisplacementDelta_(
     const_cast<pointVectorField*>(
-        &mesh.lookupObject<pointVectorField>(namePointDisplacement))),
-  cellDisplacement_(
+        &mesh.lookupObject<pointVectorField>(namePointDisplacementDelta))),
+  cellDisplacementDelta_(
       const_cast<volVectorField*>(
-          &mesh.lookupObject<volVectorField>(nameCellDisplacement))),
+          &mesh.lookupObject<volVectorField>(nameCellDisplacementDelta))),
   mesh_(mesh)
 {
     dataType_ = vector;
@@ -36,59 +36,119 @@ void preciceAdapter::FSI::DisplacementDelta::initialize()
 
 void preciceAdapter::FSI::DisplacementDelta::write(double* buffer, bool meshConnectivity, const unsigned int dim)
 {
-    /* TODO: Implement
-    * We need two nested for-loops for each patch,
-    * the outer for the locations and the inner for the dimensions.
-    * See the preCICE writeBlockVectorData() implementation.
-    */
-    FatalErrorInFunction
-        << "Writing displacementDeltas is not supported."
-        << exit(FatalError);
+    if (this->locationType_ == LocationType::faceCenters)
+    {
+        // For every boundary patch of the interface
+        for (const label patchID : patchIDs_)
+        {
+            const vectorField& pD =
+                cellDisplacementDelta_->boundaryField()[patchID];
+
+            // Write the forces to the preCICE buffer
+            // For every face of the patch
+            forAll(pD, i)
+            {
+                for (unsigned int d = 0; d < dim; ++d)
+                {
+                    buffer[i * dim + d] = pD[i][d];
+                }
+            }
+        }
+    }
+    else if (this->locationType_ == LocationType::faceNodes)
+    {
+        // For every boundary patch of the interface
+        for (const label patchID : patchIDs_)
+        {
+            // Write the forces to the preCICE buffer
+            // For every point of the patch
+            const labelList& meshPoints =
+                mesh_.boundaryMesh()[patchID].meshPoints();
+            forAll(meshPoints, i)
+            {
+                const label pointID = meshPoints[i];
+                for (unsigned int d = 0; d < dim; ++d)
+                {
+                    buffer[i * dim + d] =
+                        (*pointDisplacementDelta_)[pointID][d];
+                }
+            }
+        }
+    }
 }
 
 // return the displacement to use later in the velocity?
 void preciceAdapter::FSI::DisplacementDelta::read(double* buffer, const unsigned int dim)
 {
-    for (unsigned int j = 0; j < patchIDs_.size(); j++)
+    if (this->locationType_ == LocationType::faceCenters)
     {
-        // Get the ID of the current patch
-        const unsigned int patchID = patchIDs_.at(j);
+        volVectorField::Boundary& bcellDisplacementDelta =
+            cellDisplacementDelta_->boundaryFieldRef();
+        pointVectorField::Boundary& bpointDisplacementDelta =
+            pointDisplacementDelta_->boundaryFieldRef();
 
-        if (this->locationType_ == LocationType::faceCenters)
+        for (unsigned int j = 0; j < patchIDs_.size(); j++)
         {
+            // Get the ID of the current patch
+            const unsigned int patchID = patchIDs_.at(j);
 
             // the boundaryCellDisplacement is a vector and ordered according to the iterator j
             // and not according to the patchID
             // First, copy the buffer data into the center based vectorFields on each interface patch
             // For DisplacementDelta, set absolute values here and sum the interpolated values up to the point field
             // since the temporary field in this class is not reloaded in the implicit coupling
-            forAll(cellDisplacement_->boundaryField()[patchID], i)
+            vectorField& pcellDisplacementDelta =
+                bcellDisplacementDelta[patchID];
+
+            forAll(bcellDisplacementDelta[patchID], i)
             {
                 for (unsigned int d = 0; d < dim; ++d)
-                    cellDisplacement_->boundaryFieldRef()[patchID][i][d] = buffer[i * dim + d];
+                {
+                    pcellDisplacementDelta[i][d] = buffer[i * dim + d];
+                }
             }
             // Get a reference to the displacement on the point patch in order to overwrite it
-            vectorField& pointDisplacementFluidPatch(
-                refCast<vectorField>(
-                    pointDisplacement_->boundaryFieldRef()[patchID]));
+            vectorField& ppointDisplacementDelta
+            (
+                refCast<vectorField>
+                (
+                    bpointDisplacementDelta[patchID]
+                )
+            );
 
             // Overwrite the node based patch using the interpolation objects and the cell based vector field
             // Afterwards, continue as usual
-            pointDisplacementFluidPatch += interpolationObjects_[j]->faceToPointInterpolate(cellDisplacement_->boundaryField()[patchID]);
+            ppointDisplacementDelta =
+                interpolationObjects_[j]->faceToPointInterpolate
+                (
+                    pcellDisplacementDelta
+                );
         }
-        else if (this->locationType_ == LocationType::faceNodes)
+    }
+    if (this->locationType_ == LocationType::faceNodes)
+    {
+        pointVectorField::Boundary& bpointDisplacementDelta =
+            pointDisplacementDelta_->boundaryFieldRef();
+
+        for (unsigned int j = 0; j < patchIDs_.size(); j++)
         {
+            // Get the ID of the current patch
+            const unsigned int patchID = patchIDs_.at(j);
 
             // Get the displacement on the patch
-            fixedValuePointPatchVectorField& pointDisplacementFluidPatch(
-                refCast<fixedValuePointPatchVectorField>(
-                    pointDisplacement_->boundaryFieldRef()[patchID]));
+            vectorField& ppointDisplacementDelta =
+                refCast<vectorField>
+                (
+                    bpointDisplacementDelta[patchID]
+                );
 
             // Overwrite the nodes on the interface directly
-            forAll(pointDisplacement_->boundaryFieldRef()[patchID], i)
+            forAll(ppointDisplacementDelta, i)
             {
                 for (unsigned int d = 0; d < dim; ++d)
-                    pointDisplacementFluidPatch[i][d] += buffer[i * dim + d];
+                {
+                    ppointDisplacementDelta[i][d] = buffer[i * dim + d];
+                }
             }
         }
     }

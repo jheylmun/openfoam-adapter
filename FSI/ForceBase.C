@@ -11,11 +11,22 @@ preciceAdapter::FSI::ForceBase::ForceBase(
   solverType_(solverType)
 {
     //What about type "basic"?
-    if (solverType_.compare("incompressible") != 0 && solverType_.compare("compressible") != 0)
+    if
+    (
+        solverType_.compare("incompressible") != 0
+     && solverType_.compare("compressible") != 0
+#ifdef SOLID
+     && solverType_.compare("solid") != 0
+#endif
+    )
     {
         FatalErrorInFunction
             << "Force based calculations only support "
+#ifdef SOLID
+            << "solid, compressible, or incompressible solver types."
+#else
             << "compressible or incompressible solver types."
+#endif
             << exit(FatalError);
     }
 
