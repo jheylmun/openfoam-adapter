@@ -1,6 +1,7 @@
 #include "Interface.H"
 #include "Utilities.H"
 #include "polygonTriangulate.H"
+#include <array>
 
 
 using namespace Foam;
@@ -451,20 +452,20 @@ preciceAdapter::Interface::~Interface()
     // Delete all the coupling data readers
     for (uint i = 0; i < couplingDataReaders_.size(); i++)
     {
-        delete couplingDataReaders_.at(i);
+        deleteDemandDrivenData(couplingDataReaders_.at(i));
     }
     couplingDataReaders_.clear();
 
     // Delete all the coupling data writers
     for (uint i = 0; i < couplingDataWriters_.size(); i++)
     {
-        delete couplingDataWriters_.at(i);
+        deleteDemandDrivenData(couplingDataWriters_.at(i));
     }
     couplingDataWriters_.clear();
 
     // Delete the vertexIDs_
-    delete[] vertexIDs_;
+    deleteDemandDrivenData(vertexIDs_);
 
     // Delete the shared data buffer
-    delete[] dataBuffer_;
+    deleteDemandDrivenData(dataBuffer_);
 }

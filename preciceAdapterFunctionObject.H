@@ -137,6 +137,20 @@ public:
         // Update for changes of mesh
         virtual void movePoints(const polyMesh& mesh);
     */
+
+    //- Called by Time::adjustTimeStep(). Allows the functionObject to
+    //  insert a write time earlier than that already in use by the run
+    //  time. Returns the write time, or vGreat.
+    virtual scalar timeToNextWrite()
+    {
+        return adapter_.timestepPrecice();
+    }
+
+    //- Return true if the functionObject should be executed at the start
+    virtual bool executeAtStart() const
+    {
+        return false;
+    }
 };
 
 

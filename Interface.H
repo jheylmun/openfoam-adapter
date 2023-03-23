@@ -36,10 +36,10 @@ protected:
     int numDataLocations_ = 0;
 
     //- Vertex IDs assigned by preCICE
-    int* vertexIDs_;
+    int* vertexIDs_ = NULL;
 
     //- Buffer for the coupling data
-    double* dataBuffer_;
+    double* dataBuffer_ = NULL;
 
     //- Vector of CouplingDataReaders
     std::vector<CouplingDataUser*> couplingDataReaders_;

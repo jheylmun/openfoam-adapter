@@ -36,10 +36,11 @@ void adapterInfo(const std::string message, const std::string level)
             << nl
             << message.c_str()
             << nl
-            << exit(FatalError);
+            << abort(FatalError);
     }
     else if (level.compare("error-deferred") == 0)
     {
+        FatalError<<abort(FatalError);
         // Produce an warning message with red header.
         // OpenFOAM degrades errors inside read()
         // to warnings, stops the function object, but does
@@ -55,6 +56,7 @@ void adapterInfo(const std::string message, const std::string level)
             << message.c_str()
             << nl
             << nl;
+
     }
     else if (level.compare("debug") == 0)
     {

@@ -86,7 +86,7 @@ private:
     // NOTE: Add a switch for your new module here
 
     //- Interfaces
-    std::vector<Interface*> interfaces_;
+    PtrList<Interface> interfaces_;
 
     //- preCICE solver interface
     precice::SolverInterface* precice_ = NULL;
@@ -387,6 +387,12 @@ public:
 
     //- Called by the functionObject's end()
     void end();
+
+    //- Return the precice time step
+    scalar timestepPrecice() const
+    {
+        return timestepPrecice_;
+    }
 
     //- Destructor
     ~Adapter();
