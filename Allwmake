@@ -1,17 +1,13 @@
 #!/bin/sh
-set -e -u
+cd ${0%/*} || exit 1    # Run from this directory
+
+# Parse arguments for library compilation
+. $WM_PROJECT_DIR/wmake/scripts/AllwmakeParseArguments
 
 ########## CONFIGURATION - You may want to change these ########################
 
 # Optional: Preprocessor flags ("-DADAPTER_DEBUG_MODE" enables debug messages)
 ADAPTER_PREP_FLAGS=""
-
-# Build command and options
-# In order to compile with multiple threads, add e.g. "-j 4".
-# Make sure that these options are supported by your OpenFOAM version.
-adapter_build_command(){
-    wmake libso
-}
 
 # Where should the adapter be built? Default: "${FOAM_USER_LIBBIN}"
 ADAPTER_TARGET_DIR="${FOAM_USER_LIBBIN:-}"
@@ -82,7 +78,7 @@ log "Additional preprocessor/compiler options: ${ADAPTER_PREP_FLAGS}"
 # Run wmake (build the adapter) and check the exit code
 log ""
 log "Building with WMake (see the wmake.log log file)...\n"
-if ! adapter_build_command 2>&1 | tee wmake.log ||
+if ! $(wmake $targetType ./) 2>&1 | tee wmake.log ||
     [ "$(grep -c -E "error:" wmake.log)" -ne 0 ]; then
     log "=== ERROR: Building failed. See wmake.log for more. ==="
     log "Possible causes:"

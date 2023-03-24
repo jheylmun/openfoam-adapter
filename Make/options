@@ -1,27 +1,28 @@
-# ifdef BLAST_DIR
-#     SOLID_INC = \
-#         -I$(BLAST_DIR)/src/numerics/lnInclude \
-#         -I$(BLAST_DIR)/src/finiteVolume/lnInclude \
-#         -I$(BLAST_DIR)/src/thermodynamicModels/lnInclude \
-#         -I$(BLAST_DIR)/src/solidModels/lnInclude \
-#         -I$(LIB_SRC)/dynamicFvMesh/lnInclude \
-#         -DBLAST_FOAM -DSOLID
-#     SOLID_LIBS = \
-#         -L$(BLAST_LIBBIN) \
-#         -lblastSolidModels
-# else
-# ifdef SOLIDS_4_FOAM_DIR
-#     SOLID_INC = \
-#         -DOPENFOAMFOUNDATION -DOPENFOAMESIORFOUNDATION \
-#         -I$(SOLIDS_4_FOAM_DIR)/src/solids4FoamModels/lnInclude \
-#         -I$(LIB_SRC)/dynamicFvMesh/lnInclude \
-#         -DSOLIDS_4_FOAM -DSOLID
-#     SOLID_LIBS = \
-#         -L$(FOAM_USER_LIBBIN) \
-#         -lsolids4FoamModels
-# endif
+ifdef USE_BLAST_SOLID
+    SOLID_INC = \
+        -I$(BLAST_DIR)/src/numerics/lnInclude \
+        -I$(BLAST_DIR)/src/finiteVolume/lnInclude \
+        -I$(BLAST_DIR)/src/thermodynamicModels/lnInclude \
+        -I$(BLAST_DIR)/src/solidModels/lnInclude \
+        -I$(LIB_SRC)/dynamicFvMesh/lnInclude \
+        -DBLAST_FOAM -DSOLID
+    SOLID_LIBS = \
+        -L$(BLAST_LIBBIN) \
+        -lblastSolidModels
+else ifdef USE_SOLIDS_4_FOAM
+    SOLID_INC = \
+        -DOPENFOAMFOUNDATION -DOPENFOAMESIORFOUNDATION \
+        -I$(SOLIDS_4_FOAM_DIR)/src/solids4FoamModels/lnInclude \
+        -I$(LIB_SRC)/dynamicFvMesh/lnInclude \
+        -DSOLIDS_4_FOAM -DSOLID
+    SOLID_LIBS = \
+        -L$(FOAM_USER_LIBBIN) \
+        -lsolids4FoamModels
+endif
 
 EXE_INC = \
+    $(ADAPTER_PKG_CONFIG_CFLAGS) \
+    $(ADAPTER_PREP_FLAGS) \
     -I$(LIB_SRC)/finiteVolume/lnInclude \
     -I$(LIB_SRC)/meshTools/lnInclude \
     -I$(LIB_SRC)/transportModels/ \
@@ -32,8 +33,6 @@ EXE_INC = \
     -I$(LIB_SRC)/MomentumTransportModels/incompressible/lnInclude \
     -I$(LIB_SRC)/transportModels/lnInclude \
     -I$(LIB_SRC)/triSurface/lnInclude \
-    $(ADAPTER_PKG_CONFIG_CFLAGS) \
-    $(ADAPTER_PREP_FLAGS) \
     $(SOLID_INC)
 
 LIB_LIBS = \
