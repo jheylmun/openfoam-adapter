@@ -145,36 +145,37 @@ std::string preciceAdapter::FSI::FluidStructureInteraction::determineSolverType(
 bool preciceAdapter::FSI::FluidStructureInteraction::addWriters(std::string dataName, Interface* interface)
 {
     bool found = true; // Set to false later, if needed.
+    bool usePoint = interface->locationType() == LocationType::faceNodes;
 
-    if (dataName.find("Force") == 0)
+    if (dataName.find("Force") != string::npos)
     {
         interface->addCouplingDataWriter(
             dataName,
-            new Force(mesh_, solverType_) /* TODO: Add any other arguments here */
+            new Force(mesh_, solverType_, usePoint) /* TODO: Add any other arguments here */
         );
-        DEBUG(adapterInfo("Added writer: Force."));
+        adapterInfo("Added writer: Force.");
     }
-    else if (dataName.find("DisplacementDelta") == 0)
+    else if (dataName.find("DisplacementDelta") != string::npos)
     {
         interface->addCouplingDataWriter(
             dataName,
             new DisplacementDelta(mesh_, namePointDisplacement_, nameCellDisplacement_));
         DEBUG(adapterInfo("Added writer: DisplacementDelta."));
     }
-    else if (dataName.find("Displacement") == 0)
+    else if (dataName.find("Displacement") != string::npos)
     {
         interface->addCouplingDataWriter(
             dataName,
             new Displacement(mesh_, namePointDisplacement_, nameCellDisplacement_));
         DEBUG(adapterInfo("Added writer: Displacement."));
     }
-    else if (dataName.find("Stress") == 0)
+    else if (dataName.find("Stress") != string::npos)
     {
         interface->addCouplingDataWriter(
             dataName,
-            new Stress(mesh_, solverType_) /* TODO: Add any other arguments here */
+            new Stress(mesh_, solverType_, usePoint) /* TODO: Add any other arguments here */
         );
-        DEBUG(adapterInfo("Added writer: Stress."));
+        adapterInfo("Added writer: Stress.");
     }
     else
     {
@@ -193,34 +194,35 @@ bool preciceAdapter::FSI::FluidStructureInteraction::addWriters(std::string data
 bool preciceAdapter::FSI::FluidStructureInteraction::addReaders(std::string dataName, Interface* interface)
 {
     bool found = true; // Set to false later, if needed.
+    bool usePoint = interface->locationType() == LocationType::faceNodes;
 
-    if (dataName.find("Force") == 0)
+    if (dataName.find("Force") != string::npos)
     {
         interface->addCouplingDataReader(
             dataName,
-            new Force(mesh_, solverType_) /* TODO: Add any other arguments here */
+            new Force(mesh_, solverType_, usePoint) /* TODO: Add any other arguments here */
         );
         DEBUG(adapterInfo("Added reader: Force."));
     }
-    else if (dataName.find("DisplacementDelta") == 0)
+    else if (dataName.find("DisplacementDelta") != string::npos)
     {
         interface->addCouplingDataReader(
             dataName,
             new DisplacementDelta(mesh_, namePointDisplacement_, nameCellDisplacement_));
         DEBUG(adapterInfo("Added reader: DisplacementDelta."));
     }
-    else if (dataName.find("Displacement") == 0)
+    else if (dataName.find("Displacement") != string::npos)
     {
         interface->addCouplingDataReader(
             dataName,
             new Displacement(mesh_, namePointDisplacement_, nameCellDisplacement_));
         DEBUG(adapterInfo("Added reader: Displacement."));
     }
-    else if (dataName.find("Stress") == 0)
+    else if (dataName.find("Stress") != string::npos)
     {
         interface->addCouplingDataReader(
             dataName,
-            new Stress(mesh_, solverType_) /* TODO: Add any other arguments here */
+            new Stress(mesh_, solverType_, usePoint) /* TODO: Add any other arguments here */
         );
         DEBUG(adapterInfo("Added reader: Stress."));
     }

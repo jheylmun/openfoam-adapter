@@ -32,17 +32,27 @@ protected:
 
     const std::string solverType_;
 
+    Foam::volVectorField* Force_;
+    Foam::pointVectorField* pointForce_;
+
 public:
     //- Constructor
     ForceBase(
         const Foam::fvMesh& mesh,
-        const std::string solverType);
+        const std::string solverType,
+        const std::string forceName,
+        const dimensionSet forceDims,
+        const bool usePoint);
 
-    void writeToBuffer(double* buffer,
-                       Foam::volVectorField& forceField,
-                       const unsigned int dim) const;
+    virtual ~ForceBase();
 
+    //- Write the forces values into the buffer
+    void write(double* buffer, bool meshConnectivity, const unsigned int dim) override;
+
+    //- Read the forces values from the buffer
     void readFromBuffer(double* buffer) const;
+
+    bool isLocationTypeSupported(const bool meshConnectivity) const override;
 
     virtual Foam::tmp<Foam::vectorField> getFaceVectors(const unsigned int patchID) const = 0;
 };

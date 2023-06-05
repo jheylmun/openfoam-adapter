@@ -1,14 +1,20 @@
 #include "ForceBase.H"
 #include "fluidThermo.H"
+#include "volPointInterpolation.H"
 
 using namespace Foam;
 
 
 preciceAdapter::FSI::ForceBase::ForceBase(
     const Foam::fvMesh& mesh,
-    const std::string solverType)
+    const std::string solverType,
+    const std::string forceName,
+    const dimensionSet forceDims,
+    const bool usePoint)
 : mesh_(mesh),
-  solverType_(solverType)
+  solverType_(solverType),
+  Force_(nullptr),
+  pointForce_(nullptr)
 {
     //What about type "basic"?
     if
@@ -31,6 +37,34 @@ preciceAdapter::FSI::ForceBase::ForceBase(
     }
 
     dataType_ = vector;
+
+    Force_ = new volVectorField(
+        IOobject(
+            forceName,
+            mesh_.time().timeName(),
+            mesh_,
+            IOobject::NO_READ,
+            IOobject::AUTO_WRITE),
+        mesh,
+        dimensionedVector(
+            "fdim",
+            forceDims,
+            Foam::vector::zero));
+    if (usePoint)
+    {
+        pointForce_ = new pointVectorField(
+            IOobject(
+                "point" + forceName,
+                mesh_.time().timeName(),
+                mesh_,
+                IOobject::NO_READ,
+                IOobject::AUTO_WRITE),
+            pointMesh::New(mesh_),
+            dimensionedVector(
+                "fdim",
+                forceDims,
+                Foam::vector::zero));
+    }
 }
 
 //Calculate viscous force
@@ -139,9 +173,12 @@ Foam::tmp<Foam::volScalarField> preciceAdapter::FSI::ForceBase::mu() const
     }
 }
 
-void preciceAdapter::FSI::ForceBase::writeToBuffer(double* buffer,
-                                                   volVectorField& forceField,
-                                                   const unsigned int dim) const
+void preciceAdapter::FSI::ForceBase::write
+(
+    double* buffer,
+    bool meshConnectivity,
+    const unsigned int dim
+)
 {
     // Compute forces. See the Forces function object.
     // Stress tensor boundary field
@@ -157,6 +194,7 @@ void preciceAdapter::FSI::ForceBase::writeToBuffer(double* buffer,
     // Pressure boundary field
     const auto& pb = mesh_.lookupObject<volScalarField>("p").boundaryField();
 
+    volVectorField::Boundary& bforce = Force_->boundaryFieldRef();
     // For every boundary patch of the interface
     for (const label patchID : patchIDs_)
     {
@@ -167,13 +205,11 @@ void preciceAdapter::FSI::ForceBase::writeToBuffer(double* buffer,
         // FIXME: We need to substract the reference pressure for incompressible calculations
         if (solverType_.compare("incompressible") == 0)
         {
-            forceField.boundaryFieldRef()[patchID] =
-                surface * pb[patchID] * rhob[patchID];
+            bforce[patchID] = surface * pb[patchID] * rhob[patchID];
         }
         else if (solverType_.compare("compressible") == 0)
         {
-            forceField.boundaryFieldRef()[patchID] =
-                surface * pb[patchID];
+            bforce[patchID] = surface * pb[patchID];
         }
         else
         {
@@ -184,16 +220,40 @@ void preciceAdapter::FSI::ForceBase::writeToBuffer(double* buffer,
         }
 
         // Viscous forces
-        forceField.boundaryFieldRef()[patchID] +=
-            surface & devRhoReffb[patchID];
+        bforce[patchID] += surface & devRhoReffb[patchID];
+    }
 
-        // Write the forces to the preCICE buffer
-        // For every cell of the patch
-        forAll(forceField.boundaryField()[patchID], i)
+    if (pointForce_)
+    {
+        volPointInterpolation::New(mesh_).interpolateBoundaryField
+        (
+            *Force_,
+            *pointForce_
+        );
+        const pointVectorField::Boundary& bForce = pointForce_->boundaryField();
+        for (const label patchID : patchIDs_)
         {
-            for (unsigned int d = 0; d < dim; ++d)
-                buffer[i * dim + d] =
-                    forceField.boundaryField()[patchID][i][d];
+            const polyPatch& patch = mesh_.boundaryMesh()[patchID];
+            const labelList& meshPoints = patch.meshPoints();
+            forAll(meshPoints, i)
+            {
+                for (unsigned int d = 0; d < dim; ++d)
+                    buffer[i * dim + d] =
+                        (*pointForce_)[meshPoints[i]][d];
+                        // pForce[i][d];
+            }
+        }
+    }
+    else
+    {
+        for (const label patchID : patchIDs_)
+        {
+            forAll(bforce[patchID], i)
+            {
+                for (unsigned int d = 0; d < dim; ++d)
+                    buffer[i * dim + d] =
+                        Force_->boundaryField()[patchID][i][d];
+            }
         }
     }
 }
@@ -208,4 +268,17 @@ void preciceAdapter::FSI::ForceBase::readFromBuffer(double* buffer) const
     FatalErrorInFunction
         << "Reading forces is not supported."
         << exit(FatalError);
+}
+
+bool preciceAdapter::FSI::ForceBase::isLocationTypeSupported(const bool meshConnectivity) const
+{
+    return
+        this->locationType_ == LocationType::faceCenters
+     || this->locationType_ == LocationType::faceNodes;
+}
+
+preciceAdapter::FSI::ForceBase::~ForceBase()
+{
+    deleteDemandDrivenData(Force_);
+    deleteDemandDrivenData(pointForce_);
 }

@@ -11,23 +11,15 @@ namespace FSI
 //- Class that writes and reads force
 class Force : public ForceBase
 {
-private:
-    //- Force field
-    Foam::volVectorField* Force_;
-
 public:
     //- Constructor
     Force(
         const Foam::fvMesh& mesh,
-        const std::string solverType);
-
-    //- Write the forces values into the buffer
-    void write(double* buffer, bool meshConnectivity, const unsigned int dim) override;
+        const std::string solverType,
+        const bool usePoint);
 
     //- Read the forces values from the buffer
     void read(double* buffer, const unsigned int dim) override;
-
-    bool isLocationTypeSupported(const bool meshConnectivity) const override;
 
     //- Get the name of the current data field
     std::string getDataName() const override;

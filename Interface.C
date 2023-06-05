@@ -200,7 +200,7 @@ void preciceAdapter::Interface::configureMesh(const fvMesh& mesh)
             // TODO: Check if this behaves correctly in parallel.
             // TODO: Check if this behaves correctly with multiple, connected patches.
             // TODO: Maybe this should be a pointVectorField?
-            const pointField faceNodes =
+            const pointField& faceNodes =
                 mesh.boundaryMesh()[patchIDs_.at(j)].localPoints();
 
             // Assign the (x,y,z) locations to the vertices
@@ -257,8 +257,9 @@ void preciceAdapter::Interface::configureMesh(const fvMesh& mesh)
                     {
                         for (uint nodeIndex = 0; nodeIndex < nodesPerTria; nodeIndex++)
                         {
+                            label nodei = faceQuad[triEngine.triPoints()[triIndex][nodeIndex]];
                             for (uint xyz = 0; xyz < componentsPerNode; xyz++)
-                                triCoords[coordIndex++] = pointCoords[triEngine.triPoints()[triIndex][nodeIndex]][xyz];
+                                triCoords[coordIndex++] = pointCoords[nodei][xyz];
                         }
                     }
                 }
@@ -445,6 +446,11 @@ void preciceAdapter::Interface::writeCouplingData()
         }
     }
     // }
+}
+
+preciceAdapter::LocationType preciceAdapter::Interface::locationType() const
+{
+    return locationType_;
 }
 
 preciceAdapter::Interface::~Interface()

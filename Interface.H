@@ -91,6 +91,9 @@ public:
     //  data and write them into the buffer
     void writeCouplingData();
 
+    //- Return the location type
+    LocationType locationType() const;
+
     //- Destructor
     ~Interface();
 };

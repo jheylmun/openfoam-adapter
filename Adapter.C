@@ -154,19 +154,19 @@ bool preciceAdapter::Adapter::configFileRead()
         if (FSIenabled_)
         {
             // Check for unsupported FSI with meshConnectivity
-            for (uint i = 0; i < interfacesConfig_.size(); i++)
-            {
-                if (interfacesConfig_.at(i).meshConnectivity == true)
-                {
-                    adapterInfo(
-                        "Mesh connectivity is not supported for FSI, as, usually, "
-                        "the Solid participant needs to provide the connectivity information. "
-                        "Therefore, set provideMeshConnectivity = false. "
-                        "Have a look in the adapter documentation for more information. ",
-                        "warning");
-                    return false;
-                }
-            }
+            // for (uint i = 0; i < interfacesConfig_.size(); i++)
+            // {
+            //     if (interfacesConfig_.at(i).meshConnectivity == true)
+            //     {
+            //         adapterInfo(
+            //             "Mesh connectivity is not supported for FSI, as, usually, "
+            //             "the Solid participant needs to provide the connectivity information. "
+            //             "Therefore, set provideMeshConnectivity = false. "
+            //             "Have a look in the adapter documentation for more information. ",
+            //             "warning");
+            //         return false;
+            //     }
+            // }
 
             FSI_ = new FSI::FluidStructureInteraction(mesh_, runTime_);
             if (!FSI_->configure(preciceDict))

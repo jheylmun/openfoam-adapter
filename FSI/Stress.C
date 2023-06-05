@@ -4,36 +4,14 @@ using namespace Foam;
 
 preciceAdapter::FSI::Stress::Stress(
     const Foam::fvMesh& mesh,
-    const std::string solverType)
-: ForceBase(mesh, solverType)
-{
-    Stress_ = new volVectorField(
-        IOobject(
-            "Stress",
-            mesh_.time().timeName(),
-            mesh,
-            IOobject::NO_READ,
-            IOobject::AUTO_WRITE),
-        mesh,
-        dimensionedVector(
-            "pdim",
-            dimensionSet(1, -1, -2, 0, 0, 0, 0),
-            Foam::vector::zero));
-}
-
-void preciceAdapter::FSI::Stress::write(double* buffer, bool meshConnectivity, const unsigned int dim)
-{
-    this->writeToBuffer(buffer, *Stress_, dim);
-}
+    const std::string solverType,
+    const bool usePoint)
+: ForceBase(mesh, solverType, "Stress", dimensionSet(1, -1, -2, 0, 0, 0, 0), usePoint)
+{}
 
 void preciceAdapter::FSI::Stress::read(double* buffer, const unsigned int dim)
 {
     this->readFromBuffer(buffer);
-}
-
-bool preciceAdapter::FSI::Stress::isLocationTypeSupported(const bool meshConnectivity) const
-{
-    return (this->locationType_ == LocationType::faceCenters);
 }
 
 std::string preciceAdapter::FSI::Stress::getDataName() const
@@ -48,6 +26,4 @@ Foam::tmp<Foam::vectorField> preciceAdapter::FSI::Stress::getFaceVectors(const u
 }
 
 preciceAdapter::FSI::Stress::~Stress()
-{
-    delete Stress_;
-}
+{}
