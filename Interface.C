@@ -233,31 +233,37 @@ void preciceAdapter::Interface::configureMesh(const fvMesh& mesh)
                 // interpolated in the data classes (e.g. CHT)
 
                 // Define constants
-                const int triaPerQuad = 2;
                 const int nodesPerTria = 3;
                 const int componentsPerNode = 3;
 
                 // Get the list of faces and coordinates at the interface patch
-                const List<face> faceField = mesh.boundaryMesh()[patchIDs_.at(j)].localFaces();
-                const Field<point> pointCoords = mesh.boundaryMesh()[patchIDs_.at(j)].localPoints();
+                const List<face>& faceField = mesh.boundaryMesh()[patchIDs_.at(j)].localFaces();
+                const Field<point>& pointCoords = mesh.boundaryMesh()[patchIDs_.at(j)].localPoints();
+
+                // Count the number of triangles
+                label nTria = 0;
+                forAll(faceField, facei)
+                {
+                    nTria += faceField[facei].size() - 2;
+                }
 
                 // Array to store coordiantes in preCICE format
-                double triCoords[faceField.size() * triaPerQuad * nodesPerTria * componentsPerNode];
+                double triCoords[nTria * nodesPerTria * componentsPerNode];
 
                 unsigned int coordIndex = 0;
 
                 // Iterate over faces
                 forAll(faceField, facei)
                 {
-                    const face& faceQuad = faceField[facei];
+                    const face& facePoly = faceField[facei];
 
-                    triEngine.triangulate(UIndirectList<point>(pointCoords, faceQuad));
+                    triEngine.triangulate(UIndirectList<point>(pointCoords, facePoly));
 
-                    for (uint triIndex = 0; triIndex < triaPerQuad; triIndex++)
+                    forAll(triEngine.triPoints(), triIndex)
                     {
                         for (uint nodeIndex = 0; nodeIndex < nodesPerTria; nodeIndex++)
                         {
-                            label nodei = faceQuad[triEngine.triPoints()[triIndex][nodeIndex]];
+                            label nodei = facePoly[triEngine.triPoints()[triIndex][nodeIndex]];
                             for (uint xyz = 0; xyz < componentsPerNode; xyz++)
                                 triCoords[coordIndex++] = pointCoords[nodei][xyz];
                         }
@@ -265,15 +271,18 @@ void preciceAdapter::Interface::configureMesh(const fvMesh& mesh)
                 }
 
                 //Array to store the IDs we get from preCICE
-                int triVertIDs[faceField.size() * (triaPerQuad * nodesPerTria)];
+                int triVertIDs[nTria * nodesPerTria];
 
                 //Get preCICE IDs
-                precice_.getMeshVertexIDsFromPositions(meshID_, faceField.size() * (triaPerQuad * nodesPerTria), triCoords, triVertIDs);
+                precice_.getMeshVertexIDsFromPositions(meshID_, nTria * nodesPerTria, triCoords, triVertIDs);
 
-                DEBUG(adapterInfo("Number of triangles: " + std::to_string(faceField.size() * triaPerQuad)));
+                DEBUG(adapterInfo("Number of Faces: " + std::to_string(faceField.size())));
+                DEBUG(adapterInfo("Number of triangles: " + std::to_string(nTria)));
+                Info<<"Number of faces: " << returnReduce(faceField.size(), sumOp<label>()) << nl
+                    <<"Number of triangles: " << returnReduce(nTria, sumOp<label>()) << endl;
 
                 //Set Triangles
-                for (int facei = 0; facei < faceField.size() * triaPerQuad; facei++)
+                for (int facei = 0; facei < nTria; facei++)
                 {
                     precice_.setMeshTriangleWithEdges(meshID_, triVertIDs[facei * nodesPerTria], triVertIDs[facei * nodesPerTria + 1], triVertIDs[facei * nodesPerTria + 2]);
                 }
