@@ -230,7 +230,6 @@ void preciceAdapter::FSI::ForceBase::write
             *Force_,
             *pointForce_
         );
-        const pointVectorField::Boundary& bForce = pointForce_->boundaryField();
         for (const label patchID : patchIDs_)
         {
             const polyPatch& patch = mesh_.boundaryMesh()[patchID];
@@ -240,7 +239,6 @@ void preciceAdapter::FSI::ForceBase::write
                 for (unsigned int d = 0; d < dim; ++d)
                     buffer[i * dim + d] =
                         (*pointForce_)[meshPoints[i]][d];
-                        // pForce[i][d];
             }
         }
     }

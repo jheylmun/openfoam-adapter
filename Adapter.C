@@ -409,9 +409,12 @@ void preciceAdapter::Adapter::execute()
     // Advance preCICE
     advance();
 
+    bool update = false;
     // Read checkpoint if required
     if (isReadCheckpointRequired())
     {
+        update = true;
+
         readCheckpoint();
         fulfilledReadCheckpoint();
     }
@@ -450,6 +453,20 @@ void preciceAdapter::Adapter::execute()
 
     // Read the received coupling data from the buffer
     readCouplingData();
+    if (update)
+    {
+        forAll(interfaces_, i)
+        {
+            interfaces_[i].update();
+        }
+    }
+    else if (isCouplingTimeWindowComplete())
+    {
+        forAll(interfaces_, i)
+        {
+            interfaces_[i].setDeltaT(timestepPrecice_, true);
+        }
+    }
 
     // If the coupling is not going to continue, tear down everything
     // and stop the simulation.
@@ -524,6 +541,11 @@ void preciceAdapter::Adapter::initialize()
 
     DEBUG(adapterInfo("Initializing preCICE data..."));
     precice_->initializeData();
+
+    forAll(interfaces_, i)
+    {
+        interfaces_[i].setDeltaT(timestepPrecice_, true);
+    }
 
     adapterInfo("preCICE was configured and initialized", "info");
 

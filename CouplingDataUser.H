@@ -38,6 +38,7 @@ protected:
     //- location type of the interface
     LocationType locationType_ = LocationType::none;
 
+
 public:
     //- Constructor
     CouplingDataUser();
@@ -78,6 +79,12 @@ public:
 
     //- Get the name of the current data field
     virtual std::string getDataName() const = 0;
+
+    //- Set the time step
+    virtual void setDeltaT(const double deltaT, const bool complete) {}
+
+    //- Update
+    virtual void update() {}
 
     //- Destructor
     virtual ~CouplingDataUser() {}

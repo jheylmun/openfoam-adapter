@@ -35,6 +35,12 @@ public:
         const std::string namePointDisplacement,
         const std::string nameCellDisplacement);
 
+    //- Set the time step
+    void setDeltaT(const double deltaT, const bool complete) override;
+
+    //- Update
+    virtual void update() override;
+
     //- Write the displacement values into the buffer
     void write(double* buffer, bool meshConnectivity, const unsigned int dim) override;
 

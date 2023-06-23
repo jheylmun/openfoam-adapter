@@ -1,4 +1,5 @@
 #include "DisplacementDelta.H"
+#include "timeVaryingFixedValuePointPatchVectorField.H"
 
 using namespace Foam;
 
@@ -33,6 +34,66 @@ void preciceAdapter::FSI::DisplacementDelta::initialize()
     }
 }
 
+void preciceAdapter::FSI::DisplacementDelta::setDeltaT
+(
+    const double deltaT,
+    const bool complete
+)
+{
+    if (complete)
+    {
+        pointVectorField::Boundary& bpointDisplacementDelta =
+            pointDisplacementDelta_->boundaryFieldRef();
+        for (unsigned int j = 0; j < patchIDs_.size(); j++)
+        {
+            // Get the ID of the current patch
+            const unsigned int patchID = patchIDs_.at(j);
+
+            if
+            (
+                isA<timeVaryingFixedValuePointPatchVectorField>
+                (
+                    bpointDisplacementDelta[patchID]
+                )
+            )
+            {
+                refCast<timeVaryingFixedValuePointPatchVectorField>
+                (
+                    bpointDisplacementDelta[patchID]
+                ).save(deltaT);
+            }
+        }
+    }
+    else
+    {
+        pointDisplacementDelta_->correctBoundaryConditions();
+    }
+}
+
+void preciceAdapter::FSI::DisplacementDelta::update()
+{
+    pointVectorField::Boundary& bpointDisplacementDelta =
+        pointDisplacementDelta_->boundaryFieldRef();
+    for (unsigned int j = 0; j < patchIDs_.size(); j++)
+    {
+        // Get the ID of the current patch
+        const unsigned int patchID = patchIDs_.at(j);
+
+        if
+        (
+            isA<timeVaryingFixedValuePointPatchVectorField>
+            (
+                bpointDisplacementDelta[patchID]
+            )
+        )
+        {
+            refCast<timeVaryingFixedValuePointPatchVectorField>
+            (
+                bpointDisplacementDelta[patchID]
+            ).update();
+        }
+    }
+}
 
 void preciceAdapter::FSI::DisplacementDelta::write(double* buffer, bool meshConnectivity, const unsigned int dim)
 {

@@ -94,6 +94,12 @@ public:
     //- Return the location type
     LocationType locationType() const;
 
+    //- Set the time step
+    void setDeltaT(const double deltaT, const bool complete);
+
+    //- Update coupled data
+    void update();
+
     //- Destructor
     ~Interface();
 };

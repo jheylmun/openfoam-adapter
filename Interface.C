@@ -278,8 +278,6 @@ void preciceAdapter::Interface::configureMesh(const fvMesh& mesh)
 
                 DEBUG(adapterInfo("Number of Faces: " + std::to_string(faceField.size())));
                 DEBUG(adapterInfo("Number of triangles: " + std::to_string(nTria)));
-                Info<<"Number of faces: " << returnReduce(faceField.size(), sumOp<label>()) << nl
-                    <<"Number of triangles: " << returnReduce(nTria, sumOp<label>()) << endl;
 
                 //Set Triangles
                 for (int facei = 0; facei < nTria; facei++)
@@ -385,38 +383,34 @@ void preciceAdapter::Interface::createBuffer()
 
 void preciceAdapter::Interface::readCouplingData()
 {
-    // Are new data available or is the participant subcycling?
-    if (precice_.isReadDataAvailable())
+    // Make every coupling data reader read
+    for (uint i = 0; i < couplingDataReaders_.size(); i++)
     {
-        // Make every coupling data reader read
-        for (uint i = 0; i < couplingDataReaders_.size(); i++)
+        // Pointer to the current reader
+        preciceAdapter::CouplingDataUser*
+            couplingDataReader = couplingDataReaders_.at(i);
+
+        // Make preCICE read vector or scalar data
+        // and fill the adapter's buffer
+        if (couplingDataReader->hasVectorData())
         {
-            // Pointer to the current reader
-            preciceAdapter::CouplingDataUser*
-                couplingDataReader = couplingDataReaders_.at(i);
-
-            // Make preCICE read vector or scalar data
-            // and fill the adapter's buffer
-            if (couplingDataReader->hasVectorData())
-            {
-                precice_.readBlockVectorData(
-                    couplingDataReader->dataID(),
-                    numDataLocations_,
-                    vertexIDs_,
-                    dataBuffer_);
-            }
-            else
-            {
-                precice_.readBlockScalarData(
-                    couplingDataReader->dataID(),
-                    numDataLocations_,
-                    vertexIDs_,
-                    dataBuffer_);
-            }
-
-            // Read the received data from the buffer
-            couplingDataReader->read(dataBuffer_, dim_);
+            precice_.readBlockVectorData(
+                couplingDataReader->dataID(),
+                numDataLocations_,
+                vertexIDs_,
+                dataBuffer_);
         }
+        else
+        {
+            precice_.readBlockScalarData(
+                couplingDataReader->dataID(),
+                numDataLocations_,
+                vertexIDs_,
+                dataBuffer_);
+        }
+
+        // Read the received data from the buffer
+        couplingDataReader->read(dataBuffer_, dim_);
     }
 }
 
@@ -460,6 +454,46 @@ void preciceAdapter::Interface::writeCouplingData()
 preciceAdapter::LocationType preciceAdapter::Interface::locationType() const
 {
     return locationType_;
+}
+
+void preciceAdapter::Interface::setDeltaT
+(
+    const double deltaT,
+    const bool complete
+)
+{
+    for (uint i = 0; i < couplingDataWriters_.size(); i++)
+    {
+        // Pointer to the current writer
+        preciceAdapter::CouplingDataUser*
+            couplingDataWriter = couplingDataWriters_.at(i);
+        couplingDataWriter->setDeltaT(deltaT, complete);
+    }
+     for (uint i = 0; i < couplingDataReaders_.size(); i++)
+    {
+        // Pointer to the current reader
+        preciceAdapter::CouplingDataUser*
+            couplingDataReader = couplingDataReaders_.at(i);
+        couplingDataReader->setDeltaT(deltaT, complete);
+    }
+}
+
+void preciceAdapter::Interface::update()
+{
+    for (uint i = 0; i < couplingDataWriters_.size(); i++)
+    {
+        // Pointer to the current writer
+        preciceAdapter::CouplingDataUser*
+            couplingDataWriter = couplingDataWriters_.at(i);
+        couplingDataWriter->update();
+    }
+     for (uint i = 0; i < couplingDataReaders_.size(); i++)
+    {
+        // Pointer to the current reader
+        preciceAdapter::CouplingDataUser*
+            couplingDataReader = couplingDataReaders_.at(i);
+        couplingDataReader->update();
+    }
 }
 
 preciceAdapter::Interface::~Interface()

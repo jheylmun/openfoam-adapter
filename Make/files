@@ -18,6 +18,7 @@ FSI/Force.C
 FSI/Stress.C
 FSI/Displacement.C
 FSI/DisplacementDelta.C
+FSI/timeVaryingFixedValuePointPatchVectorField.C
 
 FF/FF.C
 FF/Velocity.C

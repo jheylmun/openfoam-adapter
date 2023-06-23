@@ -1,4 +1,5 @@
 #include "Displacement.H"
+#include "timeVaryingFixedValuePointPatchVectorField.H"
 
 using namespace Foam;
 
@@ -80,11 +81,16 @@ void preciceAdapter::FSI::Displacement::write(double* buffer, bool meshConnectiv
 // return the displacement to use later in the velocity?
 void preciceAdapter::FSI::Displacement::read(double* buffer, const unsigned int dim)
 {
+    pointVectorField::Boundary& bpointDisplacement =
+        pointDisplacement_->boundaryFieldRef();
     for (unsigned int j = 0; j < patchIDs_.size(); j++)
     {
         // Get the ID of the current patch
         const unsigned int patchID = patchIDs_.at(j);
 
+        // Get a reference to the displacement on the point patch in order to overwrite it
+        vectorField& ppointDisplacement =
+            refCast<vectorField>(bpointDisplacement[patchID]);
         if (this->locationType_ == LocationType::faceCenters)
         {
 
@@ -96,29 +102,84 @@ void preciceAdapter::FSI::Displacement::read(double* buffer, const unsigned int 
                 for (unsigned int d = 0; d < dim; ++d)
                     cellDisplacement_->boundaryFieldRef()[patchID][i][d] = buffer[i * dim + d];
             }
-            // Get a reference to the displacement on the point patch in order to overwrite it
-            vectorField& pointDisplacementFluidPatch(
-                refCast<vectorField>(
-                    pointDisplacement_->boundaryFieldRef()[patchID]));
 
             // Overwrite the node based patch using the interpolation objects and the cell based vector field
             // Afterwards, continue as usual
-            pointDisplacementFluidPatch = interpolationObjects_[j]->faceToPointInterpolate(cellDisplacement_->boundaryField()[patchID]);
+            ppointDisplacement =
+                interpolationObjects_[j]->faceToPointInterpolate
+                (
+                    cellDisplacement_->boundaryField()[patchID]
+                );
         }
         else if (this->locationType_ == LocationType::faceNodes)
         {
-
-            // Get the displacement on the patch
-            fixedValuePointPatchVectorField& pointDisplacementFluidPatch(
-                refCast<fixedValuePointPatchVectorField>(
-                    pointDisplacement_->boundaryFieldRef()[patchID]));
-
             // Overwrite the nodes on the interface directly
-            forAll(pointDisplacement_->boundaryFieldRef()[patchID], i)
+            forAll(ppointDisplacement, i)
             {
                 for (unsigned int d = 0; d < dim; ++d)
-                    pointDisplacementFluidPatch[i][d] = buffer[i * dim + d];
+                    ppointDisplacement[i][d] = buffer[i * dim + d];
             }
+        }
+    }
+}
+
+void preciceAdapter::FSI::Displacement::setDeltaT
+(
+    const double deltaT,
+    const bool complete
+)
+{
+    if (complete)
+    {
+        pointVectorField::Boundary& bpointDisplacement =
+            pointDisplacement_->boundaryFieldRef();
+        for (unsigned int j = 0; j < patchIDs_.size(); j++)
+        {
+            // Get the ID of the current patch
+            const unsigned int patchID = patchIDs_.at(j);
+
+            if
+            (
+                isA<timeVaryingFixedValuePointPatchVectorField>
+                (
+                    bpointDisplacement[patchID]
+                )
+            )
+            {
+                refCast<timeVaryingFixedValuePointPatchVectorField>
+                (
+                    bpointDisplacement[patchID]
+                ).save(deltaT);
+            }
+        }
+    }
+    else
+    {
+        pointDisplacement_->correctBoundaryConditions();
+    }
+}
+
+void preciceAdapter::FSI::Displacement::update()
+{
+    pointVectorField::Boundary& bpointDisplacement =
+        pointDisplacement_->boundaryFieldRef();
+    for (unsigned int j = 0; j < patchIDs_.size(); j++)
+    {
+        // Get the ID of the current patch
+        const unsigned int patchID = patchIDs_.at(j);
+
+        if
+        (
+            isA<timeVaryingFixedValuePointPatchVectorField>
+            (
+                bpointDisplacement[patchID]
+            )
+        )
+        {
+            refCast<timeVaryingFixedValuePointPatchVectorField>
+            (
+                bpointDisplacement[patchID]
+            ).update();
         }
     }
 }
