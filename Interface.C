@@ -169,13 +169,14 @@ void preciceAdapter::Interface::configureMesh(const fvMesh& mesh)
     }
     else if (locationType_ == LocationType::faceNodes)
     {
+        numDataLocations_ = 0;
         // Count the data locations for all the patches
         for (uint j = 0; j < patchIDs_.size(); j++)
         {
             numDataLocations_ +=
-                mesh.boundaryMesh()[patchIDs_.at(j)].localPoints().size();
+                mesh.boundaryMesh()[patchIDs_.at(j)].meshPoints().size();
         }
-        DEBUG(adapterInfo("Number of face nodes: " + std::to_string(numDataLocations_)));
+        DEBUG(adapterInfo("Number of unique face nodes: " + std::to_string(numDataLocations_)));
 
         // Array of the mesh vertices.
         // One mesh is used for all the patches and each vertex has 3D coordinates.
@@ -188,26 +189,20 @@ void preciceAdapter::Interface::configureMesh(const fvMesh& mesh)
         // Initialize the index of the vertices array
         int verticesIndex = 0;
 
-        // Triangulation engine
-        polygonTriangulate triEngine;
 
         // Get the locations of the mesh vertices (here: face nodes)
         // for all the patches
+        const pointField& points = mesh.points();
         for (uint j = 0; j < patchIDs_.size(); j++)
         {
-            // Get the face nodes of the current patch
-            // TODO: Check if this is correct.
-            // TODO: Check if this behaves correctly in parallel.
-            // TODO: Check if this behaves correctly with multiple, connected patches.
-            // TODO: Maybe this should be a pointVectorField?
-            const pointField& faceNodes =
-                mesh.boundaryMesh()[patchIDs_.at(j)].localPoints();
-
-            // Assign the (x,y,z) locations to the vertices
-            // TODO: Ensure consistent order when writing/reading
-            for (int i = 0; i < faceNodes.size(); i++)
+            const labelList& meshPoints =
+                mesh.boundaryMesh()[patchIDs_.at(j)].meshPoints();
+            forAll(meshPoints, i)
+            {
+                const label pointi = meshPoints[i];
                 for (unsigned int d = 0; d < dim_; ++d)
-                    vertices[verticesIndex++] = faceNodes[i][d];
+                    vertices[verticesIndex++] = points[pointi][d];
+            }
         }
 
         // Pass the mesh vertices information to preCICE
@@ -217,8 +212,20 @@ void preciceAdapter::Interface::configureMesh(const fvMesh& mesh)
         // Only set the triangles, if necessary
         if (meshConnectivity_)
         {
+            label start = 0;
+
+            // Triangulation engine
+            polygonTriangulate triEngine;
             for (uint j = 0; j < patchIDs_.size(); j++)
             {
+                const labelList& meshPoints =
+                    mesh.boundaryMesh()[patchIDs_.at(j)].meshPoints();
+                Map<label> globalToLocal(meshPoints.size());
+                forAll(meshPoints, i)
+                {
+                    globalToLocal.insert(meshPoints[i], vertexIDs_[i + start]);
+                }
+
                 // Define triangles
                 // This is done in the following way:
                 // We get a list of faces, which belong to this patch, and triangulate each face
@@ -232,58 +239,47 @@ void preciceAdapter::Interface::configureMesh(const fvMesh& mesh)
                 // Since data is now related to nodes, volume fields (e.g. heat flux) needs to be
                 // interpolated in the data classes (e.g. CHT)
 
-                // Define constants
-                const int nodesPerTria = 3;
-                const int componentsPerNode = 3;
-
                 // Get the list of faces and coordinates at the interface patch
-                const List<face>& faceField = mesh.boundaryMesh()[patchIDs_.at(j)].localFaces();
-                const Field<point>& pointCoords = mesh.boundaryMesh()[patchIDs_.at(j)].localPoints();
+                const polyPatch& patch = mesh.boundaryMesh()[patchIDs_.at(j)];
 
                 // Count the number of triangles
-                label nTria = 0;
-                forAll(faceField, facei)
+                label nTris = 0;
+                forAll(patch, facei)
                 {
-                    nTria += faceField[facei].size() - 2;
+                    nTris += patch[facei].size() - 2;
                 }
 
-                // Array to store coordiantes in preCICE format
-                double triCoords[nTria * nodesPerTria * componentsPerNode];
-
-                unsigned int coordIndex = 0;
-
                 // Iterate over faces
-                forAll(faceField, facei)
+                forAll(patch, facei)
                 {
-                    const face& facePoly = faceField[facei];
+                    const face& polyFace = patch[facei];
 
-                    triEngine.triangulate(UIndirectList<point>(pointCoords, facePoly));
-
-                    forAll(triEngine.triPoints(), triIndex)
+                    if (polyFace.size() == 3)
                     {
-                        for (uint nodeIndex = 0; nodeIndex < nodesPerTria; nodeIndex++)
+                        const label a = globalToLocal[polyFace[0]];
+                        const label b = globalToLocal[polyFace[1]];
+                        const label c = globalToLocal[polyFace[2]];
+                        precice_.setMeshTriangleWithEdges(meshID_, a, b, c);
+                    }
+                    else
+                    {
+                        triEngine.triangulate(UIndirectList<point>(points, polyFace));
+
+                        forAll(triEngine.triPoints(), triIndex)
                         {
-                            label nodei = facePoly[triEngine.triPoints()[triIndex][nodeIndex]];
-                            for (uint xyz = 0; xyz < componentsPerNode; xyz++)
-                                triCoords[coordIndex++] = pointCoords[nodei][xyz];
+                            const FixedList<label, 3>& tri =
+                                triEngine.triPoints()[triIndex];
+                            const label a = globalToLocal[polyFace[tri[0]]];
+                            const label b = globalToLocal[polyFace[tri[1]]];
+                            const label c = globalToLocal[polyFace[tri[2]]];
+                            precice_.setMeshTriangleWithEdges(meshID_, a, b, c);
                         }
                     }
                 }
-
-                //Array to store the IDs we get from preCICE
-                int triVertIDs[nTria * nodesPerTria];
-
-                //Get preCICE IDs
-                precice_.getMeshVertexIDsFromPositions(meshID_, nTria * nodesPerTria, triCoords, triVertIDs);
-
                 DEBUG(adapterInfo("Number of Faces: " + std::to_string(faceField.size())));
                 DEBUG(adapterInfo("Number of triangles: " + std::to_string(nTria)));
 
-                //Set Triangles
-                for (int facei = 0; facei < nTria; facei++)
-                {
-                    precice_.setMeshTriangleWithEdges(meshID_, triVertIDs[facei * nodesPerTria], triVertIDs[facei * nodesPerTria + 1], triVertIDs[facei * nodesPerTria + 2]);
-                }
+                start += patch.meshPoints().size();
             }
         }
     }

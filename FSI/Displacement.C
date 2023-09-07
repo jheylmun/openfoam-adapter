@@ -153,8 +153,9 @@ void preciceAdapter::FSI::Displacement::setDeltaT
             }
         }
     }
-    else
+    // else
     {
+        Info<<"correct"<<endl;
         pointDisplacement_->correctBoundaryConditions();
     }
 }

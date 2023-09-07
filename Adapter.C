@@ -336,6 +336,7 @@ void preciceAdapter::Adapter::configure()
 
         // Read the received coupling data
         readCouplingData();
+        // writeCouplingData();
 
         // If checkpointing is required, specify the checkpointed fields
         // and write the first checkpoint

@@ -235,8 +235,7 @@ void preciceAdapter::FSI::ForceBase::write
             const polyPatch& patch = mesh_.boundaryMesh()[patchID];
             const labelList& meshPoints = patch.meshPoints();
             forAll(meshPoints, i)
-            {
-                for (unsigned int d = 0; d < dim; ++d)
+            {                for (unsigned int d = 0; d < dim; ++d)
                     buffer[i * dim + d] =
                         (*pointForce_)[meshPoints[i]][d];
             }
