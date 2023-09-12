@@ -143,7 +143,11 @@ public:
     //  time. Returns the write time, or vGreat.
     virtual scalar timeToNextWrite()
     {
-        return adapter_.timestepPrecice();
+        if (adapter_.timestepPrecice() < 1.5*this->mesh_.time().deltaTValue())
+        {
+            return adapter_.timestepPrecice();
+        }
+        return great;
     }
 
     //- Return true if the functionObject should be executed at the start

@@ -3,6 +3,7 @@
 
 #include "Interface.H"
 
+#include "FSI/NullDisplacement.H"
 #include "FSI/Displacement.H"
 #include "FSI/DisplacementDelta.H"
 #include "FSI/Force.H"
