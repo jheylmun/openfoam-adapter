@@ -131,6 +131,16 @@ bool preciceAdapter::Adapter::configFileRead()
                         interfaceConfig.readData.push_back(readDatum);
                         DEBUG(adapterInfo("      - " + readDatum));
                     }
+                    if (interfaceDict.found("nullReadData"))
+                    {
+                        DEBUG(adapterInfo("    nullReadData     : "));
+                        auto nullReadData = static_cast<wordList>(interfaceDict.lookup("nullReadData"));
+                        for (auto nullReadData : readData)
+                        {
+                            interfaceConfig.readData.push_back("Null" + nullReadData);
+                            DEBUG(adapterInfo("      - Null" + nullReadData));
+                        }
+                    }
                     interfacesConfig_.push_back(interfaceConfig);
                 }
             }

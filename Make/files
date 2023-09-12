@@ -16,6 +16,7 @@ FSI/FSI.C
 FSI/ForceBase.C
 FSI/Force.C
 FSI/Stress.C
+FSI/NullDisplacement.C
 FSI/Displacement.C
 FSI/DisplacementDelta.C
 

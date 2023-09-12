@@ -162,6 +162,13 @@ bool preciceAdapter::FSI::FluidStructureInteraction::addWriters(std::string data
             new DisplacementDelta(mesh_, namePointDisplacement_, nameCellDisplacement_));
         DEBUG(adapterInfo("Added writer: DisplacementDelta."));
     }
+    else if (dataName.find("NullDisplacement") != string::npos)
+    {
+        interface->addCouplingDataWriter(
+            dataName,
+            new NullDisplacement(mesh_, namePointDisplacement_, nameCellDisplacement_));
+        DEBUG(adapterInfo("Added writer: NullDisplacement."));
+    }
     else if (dataName.find("Displacement") != string::npos)
     {
         interface->addCouplingDataWriter(
