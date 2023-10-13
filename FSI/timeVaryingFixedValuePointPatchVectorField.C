@@ -44,10 +44,9 @@ timeVaryingFixedValuePointPatchVectorField
 )
 :
     fixedValuePointPatchField<vector>(p, iF),
-    p0_(*this),
-    pDelta_(p.size(), Zero),
-    t0_(0.0),
-    deltaT_(1.0)
+    refDisp_(*this),
+    velocity_(p.size(), Zero),
+    tRef_(0.0)
 {}
 
 
@@ -60,21 +59,14 @@ timeVaryingFixedValuePointPatchVectorField
 )
 :
     fixedValuePointPatchField<vector>(p, iF, dict),
-    pDelta_(p.size(), Zero),
-    t0_
+    refDisp_(p.size(), Zero),
+    velocity_(p.size(), Zero),
+    tRef_
     (
         dict.lookupOrDefault
         (
-            "t0",
+            "tRef",
             iF.mesh().time().value()
-        )
-    ),
-    deltaT_
-    (
-        dict.lookupOrDefault
-        (
-            "deltaT",
-            iF.mesh().time().deltaTValue()
         )
     )
 {
@@ -83,17 +75,17 @@ timeVaryingFixedValuePointPatchVectorField
         updateCoeffs();
     }
 
-    if (dict.found("p0"))
+    if (dict.found("refDisp"))
     {
-        p0_ = vectorField("p0", dict , p.size());
+        refDisp_ = vectorField("refDisp", dict , p.size());
     }
     else
     {
-        p0_ = *this;
+        refDisp_ = *this;
     }
-    if (dict.found("pDelta"))
+    if (dict.found("velocity"))
     {
-        pDelta_ = vectorField("pDelta", dict , p.size());
+        velocity_ = vectorField("velocity", dict , p.size());
     }
 }
 
@@ -108,10 +100,9 @@ timeVaryingFixedValuePointPatchVectorField
 )
 :
     fixedValuePointPatchField<vector>(tvfv, p, iF, mapper),
-    p0_(mapper(tvfv.p0_)),
-    pDelta_(mapper(tvfv.pDelta_)),
-    t0_(tvfv.t0_),
-    deltaT_(tvfv.deltaT_)
+    refDisp_(mapper(tvfv.refDisp_)),
+    velocity_(mapper(tvfv.velocity_)),
+    tRef_(tvfv.tRef_)
 {}
 
 
@@ -123,10 +114,9 @@ timeVaryingFixedValuePointPatchVectorField
 )
 :
     fixedValuePointPatchField<vector>(tvfv, iF),
-    p0_(tvfv.p0_),
-    pDelta_(tvfv.pDelta_),
-    t0_(tvfv.t0_),
-    deltaT_(tvfv.deltaT_)
+    refDisp_(tvfv.refDisp_),
+    velocity_(tvfv.velocity_),
+    tRef_(tvfv.tRef_)
 {}
 
 
@@ -138,8 +128,8 @@ void timeVaryingFixedValuePointPatchVectorField::autoMap
 )
 {
     fixedValuePointPatchField<vector>::autoMap(m);
-    m(p0_, p0_);
-    m(pDelta_, pDelta_);
+    m(refDisp_, refDisp_);
+    m(velocity_, velocity_);
 }
 
 
@@ -153,8 +143,8 @@ void timeVaryingFixedValuePointPatchVectorField::rmap
         refCast<const timeVaryingFixedValuePointPatchVectorField>(ptf);
 
     fixedValuePointPatchField<vector>::rmap(tvfv, addr);
-    p0_.rmap(tvfv.p0_, addr);
-    pDelta_.rmap(tvfv.pDelta_, addr);
+    refDisp_.rmap(tvfv.refDisp_, addr);
+    velocity_.rmap(tvfv.velocity_, addr);
 }
 
 
@@ -167,51 +157,71 @@ void timeVaryingFixedValuePointPatchVectorField::updateCoeffs()
 
     const polyMesh& mesh = this->internalField().mesh()();
     const Time& t = mesh.time();
-    const scalar f = (t.value() - t0_)/deltaT_;
-    if (f > 1.0)
-    {
-        WarningInFunction
-            << "Current time change is greater than the supported time step" << nl
-            << t0_ << " "<<t0_ + deltaT_<< nl
-            << endl;
-    }
-    else if (f < 0)
-    {
-        WarningInFunction
-            << "Current time change is less than the initial time"
-            << endl;
-    }
-    Field<vector>::operator=(p0_ + f*pDelta_);
+    Field<vector>::operator=(refDisp_ + (t.value() - tRef_)*velocity_);
 
     fixedValuePointPatchField<vector>::updateCoeffs();
 }
 
-void timeVaryingFixedValuePointPatchVectorField::save(const scalar deltaT)
+void timeVaryingFixedValuePointPatchVectorField::saveRefState
+(
+    const scalar deltaT
+)
 {
     const scalar t = this->internalField().mesh().time().value();
-    if (t >= t0_)
+    if (t >= tRef_)
     {
-        deltaT_ = deltaT;
-        pDelta_ = (*this) - p0_;
-        p0_ = *this;
-        t0_ = t;
+        velocity_ = ((*this) - refDisp_)/deltaT;
+        refDisp_ = *this;
+        tRef_ = t;
     }
     updateCoeffs();
 }
 
-void timeVaryingFixedValuePointPatchVectorField::update()
+
+void timeVaryingFixedValuePointPatchVectorField::saveRefState
+(
+    const scalar deltaT,
+    const vectorField& refDisp
+)
 {
-    pDelta_ = (*this) - p0_;
+    const scalar t = this->internalField().mesh().time().value();
+
+    velocity_ = (refDisp - refDisp_)/deltaT;
+    refDisp_ = refDisp;
+    tRef_ = t;
+
+    updateCoeffs();
+}
+
+
+void timeVaryingFixedValuePointPatchVectorField::saveRefState
+(
+    const scalar deltaT,
+    const vectorField& refDisp,
+    const vectorField& velocity
+)
+{
+    tRef_ = this->internalField().mesh().time().value();
+    refDisp_ = refDisp;
+    velocity_ = velocity;
+
+    updateCoeffs();
+}
+
+
+void timeVaryingFixedValuePointPatchVectorField::updateVelocity()
+{
+    const scalar t = this->internalField().mesh().time().value();
+    velocity_ = ((*this) - refDisp_)/max(t - tRef_, small);
     updateCoeffs();
 }
 
 void timeVaryingFixedValuePointPatchVectorField::write(Ostream& os) const
 {
     pointPatchField<vector>::write(os);
-    writeEntry(os, "p0", p0_);
-    writeEntry(os, "pDelta", pDelta_);
-    writeEntry(os, "t0", t0_);
-    writeEntry(os, "deltaT", deltaT_);
+    writeEntry(os, "refDisp", refDisp_);
+    writeEntry(os, "velocity", velocity_);
+    writeEntry(os, "tRef", tRef_);
     writeEntry(os, "value", *this);
 }
 

@@ -83,6 +83,8 @@ void preciceAdapter::FSI::Displacement::read(double* buffer, const unsigned int 
 {
     pointVectorField::Boundary& bpointDisplacement =
         pointDisplacement_->boundaryFieldRef();
+    DynamicList<Foam::vector> mappedDisplacement;
+    DynamicList<Foam::scalar> area;
     for (unsigned int j = 0; j < patchIDs_.size(); j++)
     {
         // Get the ID of the current patch
@@ -93,15 +95,19 @@ void preciceAdapter::FSI::Displacement::read(double* buffer, const unsigned int 
             refCast<vectorField>(bpointDisplacement[patchID]);
         if (this->locationType_ == LocationType::faceCenters)
         {
+            vectorField& pcellDisplacement =
+                cellDisplacement_->boundaryFieldRef()[patchID];
 
             // the boundaryCellDisplacement is a vector and ordered according to the iterator j
             // and not according to the patchID
             // First, copy the buffer data into the center based vectorFields on each interface patch
-            forAll(cellDisplacement_->boundaryField()[patchID], i)
+            forAll(pcellDisplacement, i)
             {
                 for (unsigned int d = 0; d < dim; ++d)
-                    cellDisplacement_->boundaryFieldRef()[patchID][i][d] = buffer[i * dim + d];
+                    pcellDisplacement[i][d] = buffer[i * dim + d];
             }
+            mappedDisplacement.append(pcellDisplacement);
+            area.append(mesh_.boundary()[patchID].magSf());
 
             // Overwrite the node based patch using the interpolation objects and the cell based vector field
             // Afterwards, continue as usual
@@ -119,7 +125,16 @@ void preciceAdapter::FSI::Displacement::read(double* buffer, const unsigned int 
                 for (unsigned int d = 0; d < dim; ++d)
                     ppointDisplacement[i][d] = buffer[i * dim + d];
             }
+            mappedDisplacement.append(ppointDisplacement);
         }
+    }
+    if (this->locationType_ == LocationType::faceNodes)
+    {
+        printListStatistics("pointDisplacement", mappedDisplacement);
+    }
+    else
+    {
+        printListStatistics("cellDisplacement", mappedDisplacement, area);
     }
 }
 
@@ -149,15 +164,12 @@ void preciceAdapter::FSI::Displacement::setDeltaT
                 refCast<timeVaryingFixedValuePointPatchVectorField>
                 (
                     bpointDisplacement[patchID]
-                ).save(deltaT);
+                ).saveRefState(deltaT);
             }
         }
     }
-    // else
-    {
-        Info<<"correct"<<endl;
-        pointDisplacement_->correctBoundaryConditions();
-    }
+
+    pointDisplacement_->correctBoundaryConditions();
 }
 
 void preciceAdapter::FSI::Displacement::update()
@@ -180,7 +192,7 @@ void preciceAdapter::FSI::Displacement::update()
             refCast<timeVaryingFixedValuePointPatchVectorField>
             (
                 bpointDisplacement[patchID]
-            ).update();
+            ).updateVelocity();
         }
     }
 }

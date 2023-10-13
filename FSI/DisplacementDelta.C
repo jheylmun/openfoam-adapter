@@ -60,7 +60,7 @@ void preciceAdapter::FSI::DisplacementDelta::setDeltaT
                 refCast<timeVaryingFixedValuePointPatchVectorField>
                 (
                     bpointDisplacementDelta[patchID]
-                ).save(deltaT);
+                ).saveRefState(deltaT);
             }
         }
     }
@@ -90,7 +90,7 @@ void preciceAdapter::FSI::DisplacementDelta::update()
             refCast<timeVaryingFixedValuePointPatchVectorField>
             (
                 bpointDisplacementDelta[patchID]
-            ).update();
+            ).updateVelocity();
         }
     }
 }
@@ -141,6 +141,8 @@ void preciceAdapter::FSI::DisplacementDelta::write(double* buffer, bool meshConn
 // return the displacement to use later in the velocity?
 void preciceAdapter::FSI::DisplacementDelta::read(double* buffer, const unsigned int dim)
 {
+    DynamicList<Foam::vector> mappedDisplacementDelta;
+    DynamicList<Foam::scalar> area;
     if (this->locationType_ == LocationType::faceCenters)
     {
         volVectorField::Boundary& bcellDisplacementDelta =
@@ -168,6 +170,9 @@ void preciceAdapter::FSI::DisplacementDelta::read(double* buffer, const unsigned
                     pcellDisplacementDelta[i][d] = buffer[i * dim + d];
                 }
             }
+            mappedDisplacementDelta.append(pcellDisplacementDelta);
+            area.append(mesh_.boundary()[patchID].magSf());
+
             // Get a reference to the displacement on the point patch in order to overwrite it
             vectorField& ppointDisplacementDelta
             (
@@ -211,7 +216,17 @@ void preciceAdapter::FSI::DisplacementDelta::read(double* buffer, const unsigned
                     ppointDisplacementDelta[i][d] = buffer[i * dim + d];
                 }
             }
+            mappedDisplacementDelta.append(ppointDisplacementDelta);
         }
+    }
+    if (this->locationType_ == LocationType::faceNodes)
+    {
+        printListStatistics("pointDisplacementDelta", mappedDisplacementDelta);
+    }
+    else
+    {
+        printListStatistics(
+            "cellDisplacementDelta", mappedDisplacementDelta, area);
     }
 }
 

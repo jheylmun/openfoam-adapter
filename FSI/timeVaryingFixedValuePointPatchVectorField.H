@@ -52,10 +52,14 @@ class timeVaryingFixedValuePointPatchVectorField
 {
     // Private Data
 
-        vectorField p0_;
-        vectorField pDelta_;
-        scalar t0_;
-        scalar deltaT_;
+        //- Reference displacement
+        vectorField refDisp_;
+
+        //- Patch velocity
+        vectorField velocity_;
+
+        //- Reference time
+        scalar tRef_;
 
 
 public:
@@ -132,11 +136,26 @@ public:
             //- Update the coefficients associated with the patch field
             virtual void updateCoeffs();
 
-            //- Store the current patch values as p0 and set deltaT
-            virtual void save(const scalar deltaT);
+            //- Store the current patch values
+            virtual void saveRefState(const scalar deltaT);
 
-            //- Update the delta
-            virtual void update();
+            //- Store ref displacement, calculate velocity using current
+            //  reference state
+            virtual void saveRefState
+            (
+                const scalar deltaT,
+                const vectorField& refDisp
+            );
+
+            //- Store ref displacement, velocity
+            virtual void saveRefState
+            (
+                const scalar deltaT,
+                const vectorField& refDisp,
+                const vectorField& velocity
+            );
+            //- Update the velocity
+            virtual void updateVelocity();
 
 
 

@@ -194,6 +194,10 @@ void preciceAdapter::FSI::ForceBase::write
     // Pressure boundary field
     const auto& pb = mesh_.lookupObject<volScalarField>("p").boundaryField();
 
+    DynamicList<Foam::scalar> mappedArea;
+    DynamicList<Foam::scalar> mappedPressure;
+    DynamicList<Foam::vector> mappedForce;
+
     volVectorField::Boundary& bforce = Force_->boundaryFieldRef();
     // For every boundary patch of the interface
     for (const label patchID : patchIDs_)
@@ -201,15 +205,19 @@ void preciceAdapter::FSI::ForceBase::write
         tmp<vectorField> tsurface = getFaceVectors(patchID);
         const auto& surface = tsurface();
 
+        mappedArea.append(mesh_.boundary()[patchID].magSf());
+
         // Pressure forces
         // FIXME: We need to substract the reference pressure for incompressible calculations
         if (solverType_.compare("incompressible") == 0)
         {
             bforce[patchID] = surface * pb[patchID] * rhob[patchID];
+            mappedPressure.append((pb[patchID] * rhob[patchID])());
         }
         else if (solverType_.compare("compressible") == 0)
         {
             bforce[patchID] = surface * pb[patchID];
+            mappedPressure.append(pb[patchID]);
         }
         else
         {
@@ -219,12 +227,19 @@ void preciceAdapter::FSI::ForceBase::write
                 << exit(FatalError);
         }
 
+
         // Viscous forces
         bforce[patchID] += surface & devRhoReffb[patchID];
+        mappedForce.append(bforce[patchID]);
     }
+
+    printListStatistics("Area", mappedArea);
+    printListStatistics("Pressure", mappedPressure, mappedArea);
+    printListStatistics("Force", mappedForce, mappedArea, true);
 
     if (pointForce_)
     {
+        DynamicList<Foam::vector> mappedPointForce;
         volPointInterpolation::New(mesh_).interpolateBoundaryField
         (
             *Force_,
@@ -239,6 +254,11 @@ void preciceAdapter::FSI::ForceBase::write
                     buffer[i * dim + d] =
                         (*pointForce_)[meshPoints[i]][d];
             }
+            mappedPointForce.append
+            (
+                Field<Foam::vector>(*pointForce_, meshPoints)
+            );
+            printListStatistics("PointForce", mappedPointForce);
         }
     }
     else
