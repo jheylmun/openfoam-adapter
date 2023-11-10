@@ -61,6 +61,9 @@ class timeVaryingFixedValuePointPatchVectorField
         //- Reference time
         scalar tRef_;
 
+        //- delta T
+        scalar deltaT_;
+
 
 public:
 

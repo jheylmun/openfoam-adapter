@@ -471,6 +471,7 @@ void preciceAdapter::Adapter::execute()
 
     // Read the received coupling data from the buffer
     readCouplingData();
+
     if (update)
     {
         forAll(interfaces_, i)
