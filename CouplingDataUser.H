@@ -18,6 +18,8 @@ enum class LocationType
 
 class CouplingDataUser
 {
+public:
+    static bool log;
 
 protected:
     enum DataType

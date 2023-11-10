@@ -205,19 +205,19 @@ void preciceAdapter::FSI::ForceBase::write
         tmp<vectorField> tsurface = getFaceVectors(patchID);
         const auto& surface = tsurface();
 
-        mappedArea.append(mesh_.boundary()[patchID].magSf());
+        if (log) mappedArea.append(mesh_.boundary()[patchID].magSf());
 
         // Pressure forces
         // FIXME: We need to substract the reference pressure for incompressible calculations
         if (solverType_.compare("incompressible") == 0)
         {
             bforce[patchID] = surface * pb[patchID] * rhob[patchID];
-            mappedPressure.append((pb[patchID] * rhob[patchID])());
+            if (log) mappedPressure.append((pb[patchID] * rhob[patchID])());
         }
         else if (solverType_.compare("compressible") == 0)
         {
             bforce[patchID] = surface * pb[patchID];
-            mappedPressure.append(pb[patchID]);
+            if (log) mappedPressure.append(pb[patchID]);
         }
         else
         {
@@ -230,12 +230,15 @@ void preciceAdapter::FSI::ForceBase::write
 
         // Viscous forces
         bforce[patchID] += surface & devRhoReffb[patchID];
-        mappedForce.append(bforce[patchID]);
+        if (log) mappedForce.append(bforce[patchID]);
     }
 
-    printListStatistics("Area", mappedArea);
-    printListStatistics("Pressure", mappedPressure, mappedArea);
-    printListStatistics("Force", mappedForce, mappedArea, true);
+    if (log)
+    {
+        printListStatistics("Area", mappedArea);
+        printListStatistics("Pressure", mappedPressure, mappedArea);
+        printListStatistics("Force", mappedForce, mappedArea, true);
+    }
 
     if (pointForce_)
     {
@@ -254,12 +257,15 @@ void preciceAdapter::FSI::ForceBase::write
                     buffer[i * dim + d] =
                         (*pointForce_)[meshPoints[i]][d];
             }
-            mappedPointForce.append
-            (
-                Field<Foam::vector>(*pointForce_, meshPoints)
-            );
-            printListStatistics("PointForce", mappedPointForce);
+            if (log)
+            {
+                mappedPointForce.append
+                (
+                    Field<Foam::vector>(*pointForce_, meshPoints)
+                );
+            }
         }
+        if (log) printListStatistics("PointForce", mappedPointForce);
     }
     else
     {

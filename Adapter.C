@@ -44,6 +44,13 @@ bool preciceAdapter::Adapter::configFileRead()
         participantName_ = static_cast<word>(preciceDict.lookup("participant"));
         DEBUG(adapterInfo("  participant name    : " + participantName_));
 
+         // Read and display the preCICE configuration file name
+        CouplingDataUser::log = preciceDict.lookupOrDefault("log", false);
+        if (CouplingDataUser::log)
+        {
+            DEBUG(adapterInfo("  logging data for " + participantName_));
+        }
+
         // Read and display the list of modules
         DEBUG(adapterInfo("  modules requested   : "));
         auto modules_ = static_cast<wordList>(preciceDict.lookup("modules"));

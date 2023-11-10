@@ -106,8 +106,8 @@ void preciceAdapter::FSI::Displacement::read(double* buffer, const unsigned int 
                 for (unsigned int d = 0; d < dim; ++d)
                     pcellDisplacement[i][d] = buffer[i * dim + d];
             }
-            mappedDisplacement.append(pcellDisplacement);
-            area.append(mesh_.boundary()[patchID].magSf());
+            if (log) mappedDisplacement.append(pcellDisplacement);
+            if (log) area.append(mesh_.boundary()[patchID].magSf());
 
             // Overwrite the node based patch using the interpolation objects and the cell based vector field
             // Afterwards, continue as usual
@@ -125,16 +125,19 @@ void preciceAdapter::FSI::Displacement::read(double* buffer, const unsigned int 
                 for (unsigned int d = 0; d < dim; ++d)
                     ppointDisplacement[i][d] = buffer[i * dim + d];
             }
-            mappedDisplacement.append(ppointDisplacement);
+            if (log) mappedDisplacement.append(ppointDisplacement);
         }
     }
-    if (this->locationType_ == LocationType::faceNodes)
+    if (log)
     {
-        printListStatistics("pointDisplacement", mappedDisplacement);
-    }
-    else
-    {
-        printListStatistics("cellDisplacement", mappedDisplacement, area);
+        if (this->locationType_ == LocationType::faceNodes)
+        {
+            printListStatistics("pointDisplacement", mappedDisplacement);
+        }
+        else
+        {
+            printListStatistics("cellDisplacement", mappedDisplacement, area);
+        }
     }
 }
 

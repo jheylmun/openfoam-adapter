@@ -1,5 +1,7 @@
 #include "CouplingDataUser.H"
 
+bool preciceAdapter::CouplingDataUser::log = false;
+
 preciceAdapter::CouplingDataUser::CouplingDataUser()
 {
 }

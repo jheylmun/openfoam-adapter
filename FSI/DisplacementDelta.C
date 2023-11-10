@@ -170,8 +170,8 @@ void preciceAdapter::FSI::DisplacementDelta::read(double* buffer, const unsigned
                     pcellDisplacementDelta[i][d] = buffer[i * dim + d];
                 }
             }
-            mappedDisplacementDelta.append(pcellDisplacementDelta);
-            area.append(mesh_.boundary()[patchID].magSf());
+            if (log) mappedDisplacementDelta.append(pcellDisplacementDelta);
+            if (log) area.append(mesh_.boundary()[patchID].magSf());
 
             // Get a reference to the displacement on the point patch in order to overwrite it
             vectorField& ppointDisplacementDelta
@@ -216,17 +216,29 @@ void preciceAdapter::FSI::DisplacementDelta::read(double* buffer, const unsigned
                     ppointDisplacementDelta[i][d] = buffer[i * dim + d];
                 }
             }
-            mappedDisplacementDelta.append(ppointDisplacementDelta);
+            if (log) mappedDisplacementDelta.append(ppointDisplacementDelta);
         }
     }
-    if (this->locationType_ == LocationType::faceNodes)
+
+    if (log)
     {
-        printListStatistics("pointDisplacementDelta", mappedDisplacementDelta);
-    }
-    else
-    {
-        printListStatistics(
-            "cellDisplacementDelta", mappedDisplacementDelta, area);
+        if (this->locationType_ == LocationType::faceNodes)
+        {
+            printListStatistics
+            (
+                "pointDisplacementDelta",
+                mappedDisplacementDelta
+            );
+        }
+        else
+        {
+            printListStatistics
+            (
+                "cellDisplacementDelta",
+                mappedDisplacementDelta,
+                area
+            );
+        }
     }
 }
 

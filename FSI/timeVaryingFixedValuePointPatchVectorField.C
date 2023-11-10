@@ -44,7 +44,7 @@ timeVaryingFixedValuePointPatchVectorField
 )
 :
     fixedValuePointPatchField<vector>(p, iF),
-    refDisp_(*this),
+    refDisp_(p.size(), Zero),
     velocity_(p.size(), Zero),
     tRef_(0.0)
 {}

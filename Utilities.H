@@ -21,8 +21,8 @@ template<class T>
 void printListStatistics
 (
     const std::string& fieldName,
-    const ::Foam::UList<T>& fld,
-    const ::Foam::UList<::Foam::scalar>& w = ::Foam::UList<::Foam::scalar>(),
+    const Foam::UList<T>& fld,
+    const Foam::UList<Foam::scalar>& w = Foam::UList<Foam::scalar>(),
     const bool integrate = false,
     const std::string level = "debug"
 )
@@ -33,7 +33,7 @@ void printListStatistics
     if (w.size())
     {
         sumW = gSum(w);
-        fldAvg = ::Foam::gSum(fld*w)/sumW;
+        fldAvg = Foam::gSum(fld*w)/sumW;
         forAll(fld, i)
         {
             fldVar += Foam::cmptSqr(fld[i] - fldAvg)*w[i];
@@ -43,27 +43,35 @@ void printListStatistics
     }
     else
     {
-        sumW = fld.size();
-        fldAvg = ::Foam::gSum(fld)/sumW;
+        sumW = Foam::returnReduce(fld.size(), Foam::sumOp<Foam::label>());
+        fldAvg = Foam::gSum(fld);
+        if (sumW)
+        {
+            fldAvg /= sumW;
+        }
+
         forAll(fld, i)
         {
             fldVar += Foam::cmptSqr(fld[i] - fldAvg);
         }
         Foam::reduce(fldVar, Foam::sumOp<T>());
-        fldVar /= sumW;
+        if (sumW)
+        {
+            fldVar /= sumW;
+        }
     }
 
-    ::Foam::OStringStream oss;
+    Foam::OStringStream oss;
     oss << " statistics:\n"
         << "    size (local/global) = " << fld.size() << " / "
-        << ::Foam::returnReduce(fld.size(), ::Foam::sumOp<Foam::label>()) << '\n'
-        << "    min = " << ::Foam::gMin(fld) << '\n'
-        << "    minMagSqr = " << ::Foam::gMinMagSqr(fld) << '\n'
-        << "    max = " << ::Foam::gMax(fld) << '\n'
-        << "    maxMagSqr = " << ::Foam::gMaxMagSqr(fld) << '\n'
+        << Foam::returnReduce(fld.size(), Foam::sumOp<Foam::label>()) << '\n'
+        << "    min = " << Foam::gMin(fld) << '\n'
+        << "    minMagSqr = " << Foam::gMinMagSqr(fld) << '\n'
+        << "    max = " << Foam::gMax(fld) << '\n'
+        << "    maxMagSqr = " << Foam::gMaxMagSqr(fld) << '\n'
         << "    mean = " << fldAvg << '\n'
         << "    variance/std = " << fldVar << " / "
-        << ::Foam::cmptPow(fldVar, ::Foam::pTraits<T>::one*0.5) << '\n';
+        << Foam::cmptPow(fldVar, Foam::pTraits<T>::one*0.5) << '\n';
     if (integrate && w.size())
     {
         oss << "    Integrated value = " << sumW*fldAvg << '\n';
