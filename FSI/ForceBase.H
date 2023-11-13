@@ -35,6 +35,11 @@ protected:
     Foam::volVectorField* Force_;
     Foam::pointVectorField* pointForce_;
 
+    //- Logs
+    mutable autoPtr<OFstream> osAreaPtr_;
+    mutable autoPtr<OFstream> osForcePtr_;
+    mutable autoPtr<OFstream> osPointForcePtr_;
+
 public:
     //- Constructor
     ForceBase(

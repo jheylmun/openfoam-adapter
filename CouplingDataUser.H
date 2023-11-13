@@ -19,7 +19,9 @@ enum class LocationType
 class CouplingDataUser
 {
 public:
-    static bool log;
+    static bool logToTerminal;
+    static bool logToFile;
+    static bool log() { return logToFile || logToTerminal; }
 
 protected:
     enum DataType

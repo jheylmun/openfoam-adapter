@@ -1,6 +1,7 @@
 #include "CouplingDataUser.H"
 
-bool preciceAdapter::CouplingDataUser::log = false;
+bool preciceAdapter::CouplingDataUser::logToTerminal = false;
+bool preciceAdapter::CouplingDataUser::logToFile = false;
 
 preciceAdapter::CouplingDataUser::CouplingDataUser()
 {

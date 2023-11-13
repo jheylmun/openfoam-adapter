@@ -28,6 +28,9 @@ private:
     // Needs to be a pointer since the class disables assignment and copy constructors
     std::vector<const Foam::primitivePatchInterpolation*> interpolationObjects_;
 
+    // log file
+    mutable autoPtr<OFstream> osPtr_;
+
 public:
     //- Constructor
     DisplacementDelta(

@@ -13,9 +13,22 @@ preciceAdapter::FSI::DisplacementDelta::DisplacementDelta(
   cellDisplacementDelta_(
       const_cast<volVectorField*>(
           &mesh.lookupObject<volVectorField>(nameCellDisplacementDelta))),
-  mesh_(mesh)
+  mesh_(mesh),
+  osPtr_(nullptr)
 {
     dataType_ = vector;
+    if (logToFile)
+    {
+        if (this->locationType_ == LocationType::faceCenters)
+        {
+            osPtr_.set(new OFstream("log." + cellDisplacementDelta_->name()));
+        }
+        else
+        {
+            osPtr_.set(new OFstream("log." + pointDisplacementDelta_->name()));
+        }
+        LogListHeader(osPtr_(), false);
+    }
 }
 
 // We cannot do this step in the constructor by design of the adapter since the information of the CouplingDataUser is
@@ -170,8 +183,11 @@ void preciceAdapter::FSI::DisplacementDelta::read(double* buffer, const unsigned
                     pcellDisplacementDelta[i][d] = buffer[i * dim + d];
                 }
             }
-            if (log) mappedDisplacementDelta.append(pcellDisplacementDelta);
-            if (log) area.append(mesh_.boundary()[patchID].magSf());
+            if (log())
+            {
+                mappedDisplacementDelta.append(pcellDisplacementDelta);
+                area.append(mesh_.boundary()[patchID].magSf());
+            }
 
             // Get a reference to the displacement on the point patch in order to overwrite it
             vectorField& ppointDisplacementDelta
@@ -216,11 +232,11 @@ void preciceAdapter::FSI::DisplacementDelta::read(double* buffer, const unsigned
                     ppointDisplacementDelta[i][d] = buffer[i * dim + d];
                 }
             }
-            if (log) mappedDisplacementDelta.append(ppointDisplacementDelta);
+            if (log()) mappedDisplacementDelta.append(ppointDisplacementDelta);
         }
     }
 
-    if (log)
+    if (logToTerminal)
     {
         if (this->locationType_ == LocationType::faceNodes)
         {
@@ -235,6 +251,28 @@ void preciceAdapter::FSI::DisplacementDelta::read(double* buffer, const unsigned
             printListStatistics
             (
                 "cellDisplacementDelta",
+                mappedDisplacementDelta,
+                area
+            );
+        }
+    }
+    if (logToFile)
+    {
+        if (this->locationType_ == LocationType::faceNodes)
+        {
+            LogListStatistics
+            (
+                osPtr_(),
+                mesh_.time(),
+                mappedDisplacementDelta
+            );
+        }
+        else
+        {
+            LogListStatistics
+            (
+                osPtr_(),
+                mesh_.time(),
                 mappedDisplacementDelta,
                 area
             );

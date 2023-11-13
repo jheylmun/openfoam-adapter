@@ -14,7 +14,10 @@ preciceAdapter::FSI::ForceBase::ForceBase(
 : mesh_(mesh),
   solverType_(solverType),
   Force_(nullptr),
-  pointForce_(nullptr)
+  pointForce_(nullptr),
+  osAreaPtr_(nullptr),
+  osForcePtr_(nullptr),
+  osPointForcePtr_(nullptr)
 {
     //What about type "basic"?
     if
@@ -64,6 +67,19 @@ preciceAdapter::FSI::ForceBase::ForceBase(
                 "fdim",
                 forceDims,
                 Foam::vector::zero));
+    }
+
+    if (logToFile)
+    {
+        osAreaPtr_.set(new OFstream("log.area"));
+        osForcePtr_.set(new OFstream("log." + Force_->name()));
+        if (usePoint)
+        {
+            osPointForcePtr_.set(new OFstream("log." + pointForce_->name()));
+        }
+        LogListHeader(osAreaPtr_(), false);
+        LogListHeader(osForcePtr_(), true);
+        LogListHeader(osPointForcePtr_(), false);
     }
 }
 
@@ -195,7 +211,6 @@ void preciceAdapter::FSI::ForceBase::write
     const auto& pb = mesh_.lookupObject<volScalarField>("p").boundaryField();
 
     DynamicList<Foam::scalar> mappedArea;
-    DynamicList<Foam::scalar> mappedPressure;
     DynamicList<Foam::vector> mappedForce;
 
     volVectorField::Boundary& bforce = Force_->boundaryFieldRef();
@@ -205,19 +220,17 @@ void preciceAdapter::FSI::ForceBase::write
         tmp<vectorField> tsurface = getFaceVectors(patchID);
         const auto& surface = tsurface();
 
-        if (log) mappedArea.append(mesh_.boundary()[patchID].magSf());
+        if (log()) mappedArea.append(mesh_.boundary()[patchID].magSf());
 
         // Pressure forces
         // FIXME: We need to substract the reference pressure for incompressible calculations
         if (solverType_.compare("incompressible") == 0)
         {
             bforce[patchID] = surface * pb[patchID] * rhob[patchID];
-            if (log) mappedPressure.append((pb[patchID] * rhob[patchID])());
         }
         else if (solverType_.compare("compressible") == 0)
         {
             bforce[patchID] = surface * pb[patchID];
-            if (log) mappedPressure.append(pb[patchID]);
         }
         else
         {
@@ -230,14 +243,31 @@ void preciceAdapter::FSI::ForceBase::write
 
         // Viscous forces
         bforce[patchID] += surface & devRhoReffb[patchID];
-        if (log) mappedForce.append(bforce[patchID]);
+        if (log()) mappedForce.append(bforce[patchID]);
     }
 
-    if (log)
+    if (logToTerminal)
     {
         printListStatistics("Area", mappedArea);
-        printListStatistics("Pressure", mappedPressure, mappedArea);
         printListStatistics("Force", mappedForce, mappedArea, true);
+    }
+
+    if (logToFile)
+    {
+        LogListStatistics
+        (
+            osAreaPtr_(),
+            mesh_.time(),
+            mappedArea
+        );
+        LogListStatistics
+        (
+            osForcePtr_(),
+            mesh_.time(),
+            mappedForce,
+            mappedArea,
+            true
+        );
     }
 
     if (pointForce_)
@@ -257,7 +287,7 @@ void preciceAdapter::FSI::ForceBase::write
                     buffer[i * dim + d] =
                         (*pointForce_)[meshPoints[i]][d];
             }
-            if (log)
+            if (log())
             {
                 mappedPointForce.append
                 (
@@ -265,7 +295,16 @@ void preciceAdapter::FSI::ForceBase::write
                 );
             }
         }
-        if (log) printListStatistics("PointForce", mappedPointForce);
+        if (logToTerminal) printListStatistics("PointForce", mappedPointForce);
+        if (logToFile)
+        {
+            LogListStatistics
+            (
+                osPointForcePtr_(),
+                mesh_.time(),
+                mappedPointForce
+            );
+        }
     }
     else
     {

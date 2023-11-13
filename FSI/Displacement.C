@@ -16,6 +16,18 @@ preciceAdapter::FSI::Displacement::Displacement(
   mesh_(mesh)
 {
     dataType_ = vector;
+    if (logToFile)
+    {
+        if (this->locationType_ == LocationType::faceCenters)
+        {
+            osPtr_.set(new OFstream("log." + pointDisplacement_->name()));
+        }
+        else
+        {
+            osPtr_.set(new OFstream("log." + cellDisplacement_->name()));
+        }
+        LogListHeader(osPtr_(), false);
+    }
 }
 
 // We cannot do this step in the constructor by design of the adapter since the information of the CouplingDataUser is
@@ -106,8 +118,8 @@ void preciceAdapter::FSI::Displacement::read(double* buffer, const unsigned int 
                 for (unsigned int d = 0; d < dim; ++d)
                     pcellDisplacement[i][d] = buffer[i * dim + d];
             }
-            if (log) mappedDisplacement.append(pcellDisplacement);
-            if (log) area.append(mesh_.boundary()[patchID].magSf());
+            if (log()) mappedDisplacement.append(pcellDisplacement);
+            if (log()) area.append(mesh_.boundary()[patchID].magSf());
 
             // Overwrite the node based patch using the interpolation objects and the cell based vector field
             // Afterwards, continue as usual
@@ -125,10 +137,10 @@ void preciceAdapter::FSI::Displacement::read(double* buffer, const unsigned int 
                 for (unsigned int d = 0; d < dim; ++d)
                     ppointDisplacement[i][d] = buffer[i * dim + d];
             }
-            if (log) mappedDisplacement.append(ppointDisplacement);
+            if (log()) mappedDisplacement.append(ppointDisplacement);
         }
     }
-    if (log)
+    if (logToTerminal)
     {
         if (this->locationType_ == LocationType::faceNodes)
         {
@@ -137,6 +149,17 @@ void preciceAdapter::FSI::Displacement::read(double* buffer, const unsigned int 
         else
         {
             printListStatistics("cellDisplacement", mappedDisplacement, area);
+        }
+    }
+    if (logToFile)
+    {
+        if (this->locationType_ == LocationType::faceNodes)
+        {
+            LogListStatistics(osPtr_(), mesh_.time(), mappedDisplacement);
+        }
+        else
+        {
+            LogListStatistics(osPtr_(), mesh_.time(), mappedDisplacement, area);
         }
     }
 }

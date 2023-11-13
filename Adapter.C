@@ -45,10 +45,18 @@ bool preciceAdapter::Adapter::configFileRead()
         DEBUG(adapterInfo("  participant name    : " + participantName_));
 
          // Read and display the preCICE configuration file name
-        CouplingDataUser::log = preciceDict.lookupOrDefault("log", false);
-        if (CouplingDataUser::log)
+        CouplingDataUser::logToTerminal =
+            preciceDict.lookupOrDefault("log", false);
+        if (CouplingDataUser::logToTerminal)
         {
             DEBUG(adapterInfo("  logging data for " + participantName_));
+        }
+
+        CouplingDataUser::logToFile =
+            preciceDict.lookupOrDefault("logToFile", false);
+        if (CouplingDataUser::logToFile)
+        {
+            DEBUG(adapterInfo("  logging data for " + participantName_ + " to file"));
         }
 
         // Read and display the list of modules
