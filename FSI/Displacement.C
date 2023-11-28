@@ -20,11 +20,11 @@ preciceAdapter::FSI::Displacement::Displacement(
     {
         if (this->locationType_ == LocationType::faceCenters)
         {
-            osPtr_.set(new OFstream("log." + pointDisplacement_->name()));
+            osPtr_.set(new OFstream("log." + cellDisplacement_->name()));
         }
         else
         {
-            osPtr_.set(new OFstream("log." + cellDisplacement_->name()));
+            osPtr_.set(new OFstream("log." + pointDisplacement_->name()));
         }
         LogListHeader(osPtr_(), false);
     }
