@@ -28,9 +28,11 @@ void printListStatistics
     const std::string level = "debug"
 )
 {
+
     T fldAvg = Foam::Zero;
     T fldVar = Foam::Zero;
-    Foam::scalar sumW = 1.0;
+    Foam::scalar sumW = 0.0;
+    bool weighted = false;
     if (Foam::returnReduce(w.size(), Foam::sumOp<Foam::scalar>()))
     {
         sumW = gSum(w);
@@ -41,6 +43,7 @@ void printListStatistics
         }
         reduce(fldVar, Foam::sumOp<T>());
         fldVar /= sumW;
+        weighted = true;
     }
     else
     {
@@ -63,7 +66,12 @@ void printListStatistics
     }
 
     Foam::OStringStream oss;
-    oss << " statistics:\n"
+    oss <<  (
+                weighted
+              ? "Weighted statistics"
+              : "Statistics"
+            )
+        << " for " << fieldName << '\n'
         << "    size (local/global) = " << fld.size() << " / "
         << Foam::returnReduce(fld.size(), Foam::sumOp<Foam::label>()) << '\n'
         << "    min = " << Foam::gMin(fld) << '\n'
@@ -73,17 +81,22 @@ void printListStatistics
         << "    mean = " << fldAvg << '\n'
         << "    variance/std = " << fldVar << " / "
         << Foam::cmptPow(fldVar, Foam::pTraits<T>::one*0.5) << '\n';
-    if (integrate && w.size())
+
+    if (integrate && weighted)
     {
         oss << "    Integrated value = " << sumW*fldAvg << '\n';
     }
 
-    adapterInfo
-    (
-        (w.size() ? "weighted " + fieldName : fieldName)
-      + oss.str(),
-        level
-    );
+    if (fld.size())
+    {
+        adapterInfo(oss.str(), level);
+    }
+//     else
+//     {
+//         adapterInfo("Null", level);
+//     }
+
+    Foam::returnReduce(fld.size(), Foam::sumOp<Foam::label>());
 }
 
 inline void LogListHeader
@@ -129,7 +142,8 @@ void LogListStatistics
     T fldAvg = Foam::Zero;
     T fldVar = Foam::Zero;
     Foam::scalar sumW = 1.0;
-    if (Foam::returnReduce(w.size(), Foam::sumOp<Foam::scalar>()))
+    bool validW = Foam::returnReduce(w.size(), Foam::sumOp<Foam::scalar>());
+    if (validW)
     {
         sumW = gSum(w);
         fldAvg = Foam::gSum(fld*w)/sumW;
@@ -171,7 +185,7 @@ void LogListStatistics
             << fldMaxMagSqr << ' '
             << fldAvg << ' '
             << fldVar;
-        if (integrate && w.size())
+        if (integrate && validW)
         {
             os << ' ' << sumW*fldAvg;
         }

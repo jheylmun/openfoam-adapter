@@ -49,7 +49,8 @@ Foam::functionObjects::preciceAdapterFunctionObject::preciceAdapterFunctionObjec
     const Time& runTime,
     const dictionary& dict)
 : fvMeshFunctionObject(name, runTime, dict),
-  adapter_(runTime, mesh_)
+  adapter_(runTime, mesh_),
+  adjustTimeStep_(false)
 {
 #if (defined OPENFOAM_PLUS && (OPENFOAM_PLUS >= 1712)) || (defined OPENFOAM && (OPENFOAM >= 1806))
     // Patch for issue #27: warning "MPI was already finalized" while
@@ -76,7 +77,7 @@ bool Foam::functionObjects::preciceAdapterFunctionObject::read(const dictionary&
     // We disable executeAtStart explicitly here and don't read the respective entry from the dictionary(fvMeshFunctionObject::read(dict)). Have a look at issue #179 for the rationale.
     this->executeAtStart_ = false;
     DEBUG(adapterInfo("Execute at start set to (dictionary input is ignored): " this->executeAtStart()));
-    adapter_.configure();
+    adjustTimeStep_ = adapter_.configure();
 
     return true;
 }

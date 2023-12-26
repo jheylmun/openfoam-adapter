@@ -229,7 +229,7 @@ bool preciceAdapter::Adapter::configFileRead()
     return true;
 }
 
-void preciceAdapter::Adapter::configure()
+bool preciceAdapter::Adapter::configure()
 {
     // Read the adapter's configuration file
     if (!configFileRead())
@@ -244,14 +244,20 @@ void preciceAdapter::Adapter::configure()
         // the functionObject's execute(), which can throw errors normally.
         errorsInConfigure = true;
 
-        return;
+        return false;
     }
 
+    bool adjustTimeStep = false;
     try
     {
         // Check the timestep type (fixed vs adjustable)
         DEBUG(adapterInfo("Checking the timestep type (fixed vs adjustable)..."));
-        adjustableTimestep_ = runTime_.controlDict().lookupOrDefault("adjustTimeStep", false);
+
+        adjustTimeStep =
+            runTime_.controlDict().lookupOrDefault("adjustTimeStepPrecice", true);
+        adjustableTimestep_ =
+            !adjustTimeStep
+         && runTime_.controlDict().lookupOrDefault("adjustTimeStep", false);
 
         if (adjustableTimestep_)
         {
@@ -408,7 +414,7 @@ void preciceAdapter::Adapter::configure()
         errorsInConfigure = true;
     }
 
-    return;
+    return adjustTimeStep;
 }
 
 void preciceAdapter::Adapter::execute()

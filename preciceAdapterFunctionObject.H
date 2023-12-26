@@ -82,6 +82,9 @@ class preciceAdapterFunctionObject
     //- Adapter's main class instance
     preciceAdapter::Adapter adapter_;
 
+    //- Adjust time step to the precice time step
+    bool adjustTimeStep_;
+
     // Private Member Functions
 
     //- No copy construct
@@ -143,7 +146,11 @@ public:
     //  time. Returns the write time, or vGreat.
     virtual scalar timeToNextWrite()
     {
-        if (adapter_.timestepPrecice() < 1.5*this->mesh_.time().deltaTValue())
+        if
+        (
+            adjustTimeStep_
+//          && adapter_.timestepPrecice() < 2.0*this->mesh_.time().deltaTValue()
+        )
         {
             return adapter_.timestepPrecice();
         }

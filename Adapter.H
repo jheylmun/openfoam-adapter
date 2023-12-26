@@ -377,7 +377,7 @@ public:
     Adapter(const Foam::Time& runTime, const Foam::fvMesh& mesh);
 
     //- Setup the adapter's configuration
-    void configure();
+    bool configure();
 
     //- Called by the functionObject's execute()
     void execute();
