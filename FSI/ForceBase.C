@@ -1,6 +1,6 @@
 #include "ForceBase.H"
 #include "fluidThermo.H"
-#include "volPointInterpolation.H"
+#include "facePointInterpolation.H"
 
 using namespace Foam;
 
@@ -273,26 +273,38 @@ void preciceAdapter::FSI::ForceBase::write
     if (pointForce_)
     {
         DynamicList<Foam::vector> mappedPointForce;
-        volPointInterpolation::New(mesh_).interpolateBoundaryField
-        (
-            *Force_,
-            *pointForce_
-        );
+//         volPointInterpolation::New(mesh_).interpolateBoundaryField
+//         (
+//             *Force_,
+//             *pointForce_,
+//             true
+//         );
+        const facePointInterpolation& interp =
+            facePointInterpolation::New(mesh_);
         for (const label patchID : patchIDs_)
         {
             const polyPatch& patch = mesh_.boundaryMesh()[patchID];
             const labelList& meshPoints = patch.meshPoints();
+            Field<Foam::vector> pForce
+            (
+                interp.interpolate(patchID, Force_->boundaryField()[patchID])
+            );
+            pointForce_->boundaryFieldRef()[patchID].setInInternalField
+            (
+                pointForce_->primitiveFieldRef(),
+                pForce
+            );
             forAll(meshPoints, i)
-            {                for (unsigned int d = 0; d < dim; ++d)
-                    buffer[i * dim + d] =
-                        (*pointForce_)[meshPoints[i]][d];
+            {
+                for (unsigned int d = 0; d < dim; ++d)
+                    buffer[i * dim + d] = pForce[i][d];
             }
             if (log())
             {
-                mappedPointForce.append
-                (
-                    Field<Foam::vector>(*pointForce_, meshPoints)
-                );
+                mappedPointForce.append(pForce);
+//                 (
+//                     Field<Foam::vector>(*pointForce_, meshPoints)
+//                 );
             }
         }
         if (logToTerminal) printListStatistics("PointForce", mappedPointForce);

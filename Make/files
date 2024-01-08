@@ -1,5 +1,7 @@
 Utilities.C
 
+tools/facePointInterpolation/facePointInterpolation.C
+
 Interface.C
 
 CouplingDataUser.C
