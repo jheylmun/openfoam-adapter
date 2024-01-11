@@ -184,6 +184,14 @@ bool preciceAdapter::FSI::FluidStructureInteraction::addWriters(std::string data
         );
         adapterInfo("Added writer: Stress.");
     }
+    else if (dataName.find("Pressure") != string::npos)
+    {
+        interface->addCouplingDataWriter(
+            dataName,
+            new Pressure(mesh_, solverType_, usePoint) /* TODO: Add any other arguments here */
+        );
+        adapterInfo("Added writer: Pressure.");
+    }
     else
     {
         found = false;
