@@ -32,6 +32,7 @@ protected:
     mutable autoPtr<OFstream> osPressurePtr_;
     mutable autoPtr<OFstream> osPointPressurePtr_;
 
+    const bool negPressure_;
     const bool pointPressure_;
 
 public:
@@ -39,6 +40,7 @@ public:
     Pressure(
         const Foam::fvMesh& mesh,
         const std::string solverType,
+        const bool negPressure,
         const bool usePoint);
 
     virtual ~Pressure();

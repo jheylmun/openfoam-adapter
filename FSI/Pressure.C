@@ -8,12 +8,14 @@ using namespace Foam;
 preciceAdapter::FSI::Pressure::Pressure(
     const Foam::fvMesh& mesh,
     const std::string solverType,
+    const bool negPressure,
     const bool usePoint)
 : mesh_(mesh),
   solverType_(solverType),
   osAreaPtr_(nullptr),
   osPressurePtr_(nullptr),
   osPointPressurePtr_(nullptr),
+  negPressure_(negPressure),
   pointPressure_(usePoint)
 {
     //What about type "basic"?
@@ -156,6 +158,7 @@ void preciceAdapter::FSI::Pressure::write
             (
                 interp.interpolate(patchID, pressure.boundaryField()[patchID])
             );
+            if (negPressure_) pPressure *= -1.0;
             forAll(pPressure, i)
             {
                 buffer[i] = pPressure[i];
@@ -182,9 +185,19 @@ void preciceAdapter::FSI::Pressure::write
         for (const label patchID : patchIDs_)
         {
             const scalarField& pPressure = pressure.boundaryField()[patchID];
-            forAll(pPressure, i)
+            if (negPressure_)
             {
-                buffer[i] = pPressure[i];
+                forAll(pPressure, i)
+                {
+                    buffer[i] = -pPressure[i];
+                }
+            }
+            else
+            {
+                forAll(pPressure, i)
+                {
+                    buffer[i] = pPressure[i];
+                }
             }
         }
     }
