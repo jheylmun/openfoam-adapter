@@ -33,6 +33,7 @@ EXE_INC = \
     -I$(LIB_SRC)/MomentumTransportModels/incompressible/lnInclude \
     -I$(LIB_SRC)/transportModels/lnInclude \
     -I$(LIB_SRC)/triSurface/lnInclude \
+    -I$(LIB_SRC)/dynamicFvMesh/lnInclude \
     $(SOLID_INC)
 
 LIB_LIBS = \
@@ -44,6 +45,7 @@ LIB_LIBS = \
     -lcompressibleMomentumTransportModels \
     -lthermophysicalTransportModels \
     -limmiscibleIncompressibleTwoPhaseMixture \
+    -ldynamicFvMesh \
     $(ADAPTER_PKG_CONFIG_LIBS) \
     -lprecice \
     $(SOLID_LIBS)

@@ -1,7 +1,7 @@
 #include "Adapter.H"
 #include "Interface.H"
 #include "Utilities.H"
-
+#include "dynamicFvMesh.H"
 #include "IOstreams.H"
 
 using namespace Foam;
@@ -573,11 +573,21 @@ void preciceAdapter::Adapter::initialize()
     }
 
     DEBUG(adapterInfo("Initializing preCICE data..."));
-    precice_->initializeData();
+    timestepPrecice_ = precice_->initializeData();
 
+    bool moveMesh = false;
     forAll(interfaces_, i)
     {
         interfaces_[i].setDeltaT(timestepPrecice_, true);
+        moveMesh = moveMesh || interfaces_[i].initializeMeshPoints();
+
+    }
+
+    if (moveMesh && isA<dynamicFvMesh>(mesh_))
+    {
+        fvMesh& mesh = const_cast<fvMesh&>(mesh_);
+        dynamicCast<dynamicFvMesh>(mesh).update();
+        mesh.moving(false);
     }
 
     adapterInfo("preCICE was configured and initialized", "info");

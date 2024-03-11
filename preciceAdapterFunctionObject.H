@@ -146,6 +146,7 @@ public:
     //  time. Returns the write time, or vGreat.
     virtual scalar timeToNextWrite()
     {
+        Info<<"ADJUST: "<<adjustTimeStep_<<" "<<adapter_.timestepPrecice()<<endl;
         if
         (
             adjustTimeStep_

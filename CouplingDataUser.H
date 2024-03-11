@@ -68,6 +68,9 @@ public:
     // Check if the dataset supports this interface nodes location
     void checkDataLocation(const bool meshConnectivity) const;
 
+    //- Does the mesh need to be moved to an initial position
+    virtual bool initializeMeshPoints() const;
+
     //- option to initialize data in derived data classes
     virtual void initialize();
 

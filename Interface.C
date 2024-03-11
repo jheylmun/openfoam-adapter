@@ -79,6 +79,7 @@ void preciceAdapter::Interface::configureMesh(const fvMesh& mesh)
     // TODO: Reduce code duplication. In the meantime, take care to update
     // all the branches.
 
+
     if (locationType_ == LocationType::faceCenters)
     {
         // Count the data locations for all the patches
@@ -87,7 +88,13 @@ void preciceAdapter::Interface::configureMesh(const fvMesh& mesh)
             numDataLocations_ +=
                 mesh.boundaryMesh()[patchIDs_.at(j)].faceCentres().size();
         }
-        DEBUG(adapterInfo("Number of face centres: " + std::to_string(numDataLocations_)));
+
+        // Number of faces
+        if (Pstream::parRun() && numDataLocations_)
+        {
+            adapterInfo("Local number of face centres: " + std::to_string(numDataLocations_));
+        }
+        adapterInfo("Number of face centres: " + std::to_string(returnReduce(numDataLocations_, sumOp<label>())), "info");
 
         // Array of the mesh vertices.
         // One mesh is used for all the patches and each vertex has 3D coordinates.
@@ -173,17 +180,19 @@ void preciceAdapter::Interface::configureMesh(const fvMesh& mesh)
 
         // Count the data locations for all the patches
         List<label> pointStarts(patchIDs_.size(), 0);
+        for (uint j = 0; j < patchIDs_.size(); j++)
         {
-            for (uint j = 0; j < patchIDs_.size(); j++)
-            {
-                numDataLocations_ +=
-                    mesh.boundaryMesh()[patchIDs_.at(j)].nPoints();
-
-                if (j < patchIDs_.size()-1)
-                    pointStarts[j+1] = numDataLocations_;
-            }
+            pointStarts[j] = numDataLocations_;
+            numDataLocations_ +=
+                mesh.boundaryMesh()[patchIDs_.at(j)].nPoints();
         }
-        DEBUG(adapterInfo("Number of unique face nodes: " + std::to_string(numDataLocations_)));
+
+        // Number of nodes
+        if (Pstream::parRun() && numDataLocations_)
+        {
+            adapterInfo("Local number of face nodes: " + std::to_string(numDataLocations_));
+        }
+        adapterInfo("Number of face nodes: " + std::to_string(returnReduce(numDataLocations_, sumOp<label>())), "info");
 
         // Array of the mesh vertices.
         // One mesh is used for all the patches and each vertex has 3D coordinates.
@@ -217,6 +226,9 @@ void preciceAdapter::Interface::configureMesh(const fvMesh& mesh)
         // Only set the triangles, if necessary
         if (meshConnectivity_)
         {
+            label nPolyFaces = 0;
+            label nTriFaces = 0;
+
             // Triangulation engine
             polygonTriangulate triEngine;
             for (uint j = 0; j < patchIDs_.size(); j++)
@@ -246,6 +258,9 @@ void preciceAdapter::Interface::configureMesh(const fvMesh& mesh)
                     nTris += localFaces[facei].size() - 2;
                 }
 
+                nPolyFaces += localFaces.size();
+                nTriFaces += nTris;
+
                 // Iterate over faces
                 forAll(localFaces, facei)
                 {
@@ -261,6 +276,18 @@ void preciceAdapter::Interface::configureMesh(const fvMesh& mesh)
                             polyFace[2] + pointStarts[j]
                         );
                     }
+//                     // Quads must be planar
+//                     else if (polyFace.size() == 4)
+//                     {
+//                         precice_.setMeshQuadWithEdges
+//                         (
+//                             meshID_,
+//                             polyFace[0] + pointStarts[j],
+//                             polyFace[1] + pointStarts[j],
+//                             polyFace[2] + pointStarts[j],
+//                             polyFace[3] + pointStarts[j]
+//                         );
+//                     }
                     else
                     {
                         triEngine.triangulate
@@ -282,9 +309,22 @@ void preciceAdapter::Interface::configureMesh(const fvMesh& mesh)
                         }
                     }
                 }
-                DEBUG(adapterInfo("Number of Faces: " + std::to_string(faceField.size())));
-                DEBUG(adapterInfo("Number of triangles: " + std::to_string(nTria)));
             }
+
+
+            // Number of polyhedral faces
+            if (Pstream::parRun() && nPolyFaces)
+            {
+                adapterInfo("Local number of faces: " + std::to_string(nPolyFaces));
+            }
+            adapterInfo("Number of faces: " + std::to_string(returnReduce(nPolyFaces, sumOp<label>())), "info");
+
+            // Number of triangular faces
+            if (Pstream::parRun() && nTriFaces)
+            {
+                adapterInfo("Local number of triangles: " + std::to_string(nTriFaces));
+            }
+            adapterInfo("Number of triangles: " + std::to_string(returnReduce(nTriFaces, sumOp<label>())), "info");
         }
     }
 }
@@ -335,6 +375,18 @@ void preciceAdapter::Interface::addCouplingDataReader(
 
     // Add the CouplingDataUser to the list of readers
     couplingDataReaders_.push_back(couplingDataReader);
+}
+
+bool preciceAdapter::Interface::initializeMeshPoints() const
+{
+    for (uint i = 0; i < couplingDataReaders_.size(); i++)
+    {
+        if (couplingDataReaders_.at(i)->initializeMeshPoints())
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 void preciceAdapter::Interface::createBuffer()

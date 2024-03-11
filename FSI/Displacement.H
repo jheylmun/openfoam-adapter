@@ -41,6 +41,12 @@ public:
     //- Set the time step
     void setDeltaT(const double deltaT, const bool complete) override;
 
+    //- Does the mesh need to be moved to an initial position
+    virtual bool initializeMeshPoints() const override
+    {
+        return true;
+    }
+
     //- Update
     virtual void update() override;
 

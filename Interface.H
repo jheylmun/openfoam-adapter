@@ -78,6 +78,9 @@ public:
         std::string dataName,
         CouplingDataUser* couplingDataWriter);
 
+    //- Does the mesh need to be moved to an initial position
+    bool initializeMeshPoints() const;
+
     //- Allocate an appropriate buffer for scalar or vector data.
     //  If at least one couplingDataUser has vector data, then
     //  define a buffer for 3D data. Otherwise, for 1D data.

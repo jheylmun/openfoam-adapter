@@ -57,6 +57,12 @@ void preciceAdapter::CouplingDataUser::checkDataLocation(const bool meshConnecti
     }
 }
 
+//- Does the mesh need to be moved to an initial position
+bool preciceAdapter::CouplingDataUser::initializeMeshPoints() const
+{
+    return false;
+}
+
 // Dummy implementation which can be overwritten in derived classes if required
 void preciceAdapter::CouplingDataUser::initialize()
 {
